@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { PhotoItem } from "./photo-item";
+import { useBreakpointColumns } from "@/hooks/use-breakpoint-columns";
 import type { Photo, LayoutConfig } from "@/types";
 
 interface MasonryLayoutProps {
@@ -20,22 +21,22 @@ export function MasonryLayout({
   size = "thumb",
   rounded = true,
 }: MasonryLayoutProps) {
-  const { columnsDesktop, gap } = config;
+  const { columnsMobile, columnsTablet, columnsDesktop, gap } = config;
+  const numColumns = useBreakpointColumns(columnsMobile, columnsTablet, columnsDesktop);
 
   // Distribute photos across columns by shortest column
   const columns = useMemo(() => {
-    const cols: Photo[][] = Array.from({ length: columnsDesktop }, () => []);
-    const heights = new Array(columnsDesktop).fill(0);
+    const cols: Photo[][] = Array.from({ length: numColumns }, () => []);
+    const heights = new Array(numColumns).fill(0);
 
     for (const photo of photos) {
       const shortestCol = heights.indexOf(Math.min(...heights));
       cols[shortestCol].push(photo);
-      // Approximate height based on aspect ratio
       heights[shortestCol] += photo.height / photo.width;
     }
 
     return cols;
-  }, [photos, columnsDesktop]);
+  }, [photos, numColumns]);
 
   return (
     <div className="flex" style={{ gap: `${gap}px` }}>

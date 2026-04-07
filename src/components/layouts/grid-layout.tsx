@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { PhotoItem } from "./photo-item";
 import type { Photo, LayoutConfig } from "@/types";
 
@@ -20,10 +21,11 @@ export function GridLayout({
   rounded = true,
 }: GridLayoutProps) {
   const { columnsMobile, columnsTablet, columnsDesktop, gap } = config;
+  const uid = useId().replace(/:/g, "");
 
   return (
     <div
-      className="grid"
+      className={`grid lg-${uid}`}
       style={{
         gap: `${gap}px`,
         gridTemplateColumns: `repeat(${columnsMobile}, 1fr)`,
@@ -31,10 +33,10 @@ export function GridLayout({
     >
       <style>{`
         @media (min-width: 640px) {
-          .layout-grid { grid-template-columns: repeat(${columnsTablet}, 1fr) !important; }
+          .lg-${uid} { grid-template-columns: repeat(${columnsTablet}, 1fr) !important; }
         }
         @media (min-width: 1024px) {
-          .layout-grid { grid-template-columns: repeat(${columnsDesktop}, 1fr) !important; }
+          .lg-${uid} { grid-template-columns: repeat(${columnsDesktop}, 1fr) !important; }
         }
       `}</style>
       {photos.map((photo) => (
@@ -46,7 +48,6 @@ export function GridLayout({
           showInfo
           size={size}
           rounded={rounded}
-          className="layout-grid-item"
         />
       ))}
     </div>
