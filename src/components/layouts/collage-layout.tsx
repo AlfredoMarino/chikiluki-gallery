@@ -8,6 +8,8 @@ interface CollageLayoutProps {
   config: LayoutConfig;
   onPhotoClick?: (photoId: string) => void;
   isPublic?: boolean;
+  size?: "thumb" | "full";
+  rounded?: boolean;
 }
 
 /**
@@ -18,6 +20,8 @@ export function CollageLayout({
   photos,
   config,
   onPhotoClick,
+  size = "thumb",
+  rounded = true,
 }: CollageLayoutProps) {
   const { columnsDesktop, gap, photoOverrides } = config;
 
@@ -48,6 +52,8 @@ export function CollageLayout({
               onClick={() => onPhotoClick?.(photo.id)}
               aspectRatio={aspect}
               showInfo
+              size={size}
+              rounded={rounded}
               className="h-full"
             />
           </div>

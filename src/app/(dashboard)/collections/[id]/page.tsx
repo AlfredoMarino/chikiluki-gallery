@@ -151,6 +151,8 @@ export default function CollectionDetailPage({
           photos={photos}
           layout={collection.layout}
           onPhotoClick={openLightbox}
+          size="full"
+          rounded={false}
         />
       ) : (
         <PhotoGrid

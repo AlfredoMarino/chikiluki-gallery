@@ -8,12 +8,16 @@ interface ListLayoutProps {
   config: LayoutConfig;
   onPhotoClick?: (photoId: string) => void;
   isPublic?: boolean;
+  size?: "thumb" | "full";
+  rounded?: boolean;
 }
 
 export function ListLayout({
   photos,
   config,
   onPhotoClick,
+  size = "thumb",
+  rounded = true,
 }: ListLayoutProps) {
   const { gap } = config;
 
@@ -26,6 +30,8 @@ export function ListLayout({
           onClick={() => onPhotoClick?.(photo.id)}
           aspectRatio={`${photo.width}/${photo.height}`}
           showInfo
+          size={size}
+          rounded={rounded}
         />
       ))}
     </div>

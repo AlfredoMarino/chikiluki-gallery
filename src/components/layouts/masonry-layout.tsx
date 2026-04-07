@@ -9,12 +9,16 @@ interface MasonryLayoutProps {
   config: LayoutConfig;
   onPhotoClick?: (photoId: string) => void;
   isPublic?: boolean;
+  size?: "thumb" | "full";
+  rounded?: boolean;
 }
 
 export function MasonryLayout({
   photos,
   config,
   onPhotoClick,
+  size = "thumb",
+  rounded = true,
 }: MasonryLayoutProps) {
   const { columnsDesktop, gap } = config;
 
@@ -48,6 +52,8 @@ export function MasonryLayout({
               onClick={() => onPhotoClick?.(photo.id)}
               aspectRatio={`${photo.width}/${photo.height}`}
               showInfo
+              size={size}
+              rounded={rounded}
             />
           ))}
         </div>

@@ -8,12 +8,16 @@ interface GridLayoutProps {
   config: LayoutConfig;
   onPhotoClick?: (photoId: string) => void;
   isPublic?: boolean;
+  size?: "thumb" | "full";
+  rounded?: boolean;
 }
 
 export function GridLayout({
   photos,
   config,
   onPhotoClick,
+  size = "thumb",
+  rounded = true,
 }: GridLayoutProps) {
   const { columnsMobile, columnsTablet, columnsDesktop, gap } = config;
 
@@ -40,6 +44,8 @@ export function GridLayout({
           onClick={() => onPhotoClick?.(photo.id)}
           aspectRatio="1/1"
           showInfo
+          size={size}
+          rounded={rounded}
           className="layout-grid-item"
         />
       ))}

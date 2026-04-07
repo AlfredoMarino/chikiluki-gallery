@@ -23,6 +23,8 @@ export function PublicCollectionView({
         layout={layout}
         onPhotoClick={setLightboxId}
         isPublic
+        size="full"
+        rounded={false}
       />
 
       {lightboxId && (

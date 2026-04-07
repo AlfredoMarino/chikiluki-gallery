@@ -11,6 +11,10 @@ interface LayoutEngineProps {
   layout: LayoutConfig | null;
   onPhotoClick?: (photoId: string) => void;
   isPublic?: boolean;
+  /** Image resolution: "thumb" for previews, "full" for layout views */
+  size?: "thumb" | "full";
+  /** Round photo corners (default true) */
+  rounded?: boolean;
 }
 
 const defaultLayout: LayoutConfig = {
@@ -31,6 +35,8 @@ export function LayoutEngine({
   layout,
   onPhotoClick,
   isPublic = false,
+  size = "thumb",
+  rounded = true,
 }: LayoutEngineProps) {
   const config = layout || defaultLayout;
 
@@ -39,6 +45,8 @@ export function LayoutEngine({
     config,
     onPhotoClick,
     isPublic,
+    size,
+    rounded,
   };
 
   switch (config.layoutType) {
