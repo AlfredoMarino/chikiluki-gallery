@@ -1,9 +1,24 @@
 "use client";
 
-import { useEffect, useState, use, useMemo } from "react";
+import { useEffect, useState, use, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutEngine } from "@/components/layouts/layout-engine";
 import { PhotoLightbox } from "@/components/photos/photo-lightbox";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import type { Photo, Collection, LayoutConfig } from "@/types";
 
@@ -24,6 +39,103 @@ const mobileBehaviorOptions = [
   { value: "rotate-hint", label: "Sugerir rotar" },
 ];
 
+const previewModes = [
+  { value: "desktop", label: "Desktop", width: "100%" },
+  { value: "tablet", label: "Tablet", width: "768px" },
+  { value: "mobile", label: "Movil", width: "375px" },
+] as const;
+
+type PreviewMode = (typeof previewModes)[number]["value"];
+
+// --- Sortable thumbnail item for drag-and-drop ---
+function SortablePhotoThumb({
+  photo,
+  span,
+  maxSpan,
+  onChangeSpan,
+}: {
+  photo: Photo;
+  span: number;
+  maxSpan: number;
+  onChangeSpan: (photoId: string, span: number) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: photo.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative overflow-hidden bg-neutral-900 ${
+        isDragging ? "ring-2 ring-blue-500" : ""
+      }`}
+    >
+      {/* Drag handle — the image itself */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing"
+      >
+        <div
+          className="aspect-square bg-neutral-800"
+          style={{
+            backgroundImage: photo.thumbBase64
+              ? `url(${photo.thumbBase64})`
+              : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <img
+            src={`/api/drive/image/${photo.id}?size=thumb`}
+            alt={photo.originalName}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      </div>
+
+      {/* Span controls overlay — bottom */}
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/70 py-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onChangeSpan(photo.id, Math.max(1, span - 1));
+          }}
+          className="flex h-5 w-5 items-center justify-center rounded text-[10px] text-white hover:bg-white/20"
+          title="Reducir tamaño"
+        >
+          −
+        </button>
+        <span className="text-[10px] text-neutral-300">{span}x</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onChangeSpan(photo.id, Math.min(maxSpan, span + 1));
+          }}
+          className="flex h-5 w-5 items-center justify-center rounded text-[10px] text-white hover:bg-white/20"
+          title="Ampliar tamaño"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CollectionSettingsPage({
   params,
 }: {
@@ -31,14 +143,17 @@ export default function CollectionSettingsPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [collection, setCollection] = useState<CollectionWithLayout | null>(null);
+  const [collection, setCollection] = useState<CollectionWithLayout | null>(
+    null
+  );
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [lightboxId, setLightboxId] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
 
-  // Layout form state — this drives the live preview
+  // Layout form state
   const [form, setForm] = useState({
     layoutType: "grid",
     columnsMobile: 2,
@@ -52,6 +167,11 @@ export default function CollectionSettingsPage({
     },
     photoOverrides: {} as Record<string, { span: number; aspect?: string }>,
   });
+
+  // dnd-kit sensors — require 8px movement before starting drag to allow clicks
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   useEffect(() => {
     Promise.all([
@@ -80,7 +200,7 @@ export default function CollectionSettingsPage({
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Build a live LayoutConfig from the form state for the preview
+  // Build live LayoutConfig from form state
   const liveConfig = useMemo(
     (): LayoutConfig => ({
       id: collection?.layout?.id || "",
@@ -97,10 +217,68 @@ export default function CollectionSettingsPage({
     [form, id, collection]
   );
 
-  const update = (key: string, value: unknown) => {
+  // Which columns value to use in the preview based on preview mode
+  const previewColumns = useMemo(() => {
+    if (previewMode === "mobile") return form.columnsMobile;
+    if (previewMode === "tablet") return form.columnsTablet;
+    return form.columnsDesktop;
+  }, [previewMode, form.columnsMobile, form.columnsTablet, form.columnsDesktop]);
+
+  // Override the config for the preview to simulate the correct device columns
+  const previewConfig = useMemo((): LayoutConfig => {
+    if (previewMode === "desktop") return liveConfig;
+    // For mobile/tablet preview, override all column counts to match that device
+    return {
+      ...liveConfig,
+      columnsMobile: previewColumns,
+      columnsTablet: previewColumns,
+      columnsDesktop: previewColumns,
+    };
+  }, [liveConfig, previewMode, previewColumns]);
+
+  const update = useCallback((key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
-  };
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = photos.findIndex((p) => p.id === active.id);
+      const newIndex = photos.findIndex((p) => p.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = arrayMove(photos, oldIndex, newIndex);
+      setPhotos(reordered);
+      setSaved(false);
+
+      // Persist order to backend
+      fetch(`/api/collections/${id}/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoIds: reordered.map((p) => p.id) }),
+      });
+    },
+    [photos, id]
+  );
+
+  const handleChangeSpan = useCallback(
+    (photoId: string, span: number) => {
+      const newOverrides = { ...form.photoOverrides };
+      if (span <= 1) {
+        delete newOverrides[photoId];
+      } else {
+        newOverrides[photoId] = {
+          ...newOverrides[photoId],
+          span,
+        };
+      }
+      update("photoOverrides", newOverrides);
+    },
+    [form.photoOverrides, update]
+  );
 
   const handleSaveLayout = async () => {
     setSaving(true);
@@ -140,6 +318,9 @@ export default function CollectionSettingsPage({
   if (!collection) {
     return <div className="text-neutral-500">Coleccion no encontrada</div>;
   }
+
+  const previewWidth =
+    previewModes.find((m) => m.value === previewMode)?.width || "100%";
 
   return (
     <div className="space-y-8">
@@ -193,42 +374,54 @@ export default function CollectionSettingsPage({
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-neutral-400">Movil</label>
-                  <span className="text-xs text-neutral-500">{form.columnsMobile}</span>
+                  <span className="text-xs text-neutral-500">
+                    {form.columnsMobile}
+                  </span>
                 </div>
                 <input
                   type="range"
                   min={1}
                   max={4}
                   value={form.columnsMobile}
-                  onChange={(e) => update("columnsMobile", parseInt(e.target.value))}
+                  onChange={(e) =>
+                    update("columnsMobile", parseInt(e.target.value))
+                  }
                   className="w-full"
                 />
               </div>
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-neutral-400">Tablet</label>
-                  <span className="text-xs text-neutral-500">{form.columnsTablet}</span>
+                  <span className="text-xs text-neutral-500">
+                    {form.columnsTablet}
+                  </span>
                 </div>
                 <input
                   type="range"
                   min={1}
                   max={6}
                   value={form.columnsTablet}
-                  onChange={(e) => update("columnsTablet", parseInt(e.target.value))}
+                  onChange={(e) =>
+                    update("columnsTablet", parseInt(e.target.value))
+                  }
                   className="w-full"
                 />
               </div>
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-xs text-neutral-400">Desktop</label>
-                  <span className="text-xs text-neutral-500">{form.columnsDesktop}</span>
+                  <span className="text-xs text-neutral-500">
+                    {form.columnsDesktop}
+                  </span>
                 </div>
                 <input
                   type="range"
                   min={1}
                   max={8}
                   value={form.columnsDesktop}
-                  onChange={(e) => update("columnsDesktop", parseInt(e.target.value))}
+                  onChange={(e) =>
+                    update("columnsDesktop", parseInt(e.target.value))
+                  }
                   className="w-full"
                 />
               </div>
@@ -264,7 +457,9 @@ export default function CollectionSettingsPage({
                 </p>
               </div>
               <button
-                onClick={() => update("forceOrientation", !form.forceOrientation)}
+                onClick={() =>
+                  update("forceOrientation", !form.forceOrientation)
+                }
                 className={`relative h-6 w-11 rounded-full transition ${
                   form.forceOrientation ? "bg-blue-600" : "bg-neutral-700"
                 }`}
@@ -318,31 +513,97 @@ export default function CollectionSettingsPage({
           </button>
         </div>
 
-        {/* Live preview */}
-        <div className="flex-1">
+        {/* Right panel: preview + reorder */}
+        <div className="flex-1 space-y-6">
+          {/* Live preview */}
           <div className="sticky top-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-medium text-neutral-300">
                 Vista previa
               </h2>
-              <span className="text-xs text-neutral-500">
-                {photos.length} fotos · {form.layoutType}
-              </span>
-            </div>
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-3">
-              {photos.length > 0 ? (
-                <LayoutEngine
-                  photos={photos}
-                  layout={liveConfig}
-                  onPhotoClick={setLightboxId}
-                />
-              ) : (
-                <div className="flex h-48 items-center justify-center text-sm text-neutral-500">
-                  Agrega fotos a la coleccion para ver el preview
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-neutral-500">
+                  {photos.length} fotos · {form.layoutType}
+                </span>
+                {/* Device preview toggle */}
+                <div className="flex rounded-md border border-neutral-700">
+                  {previewModes.map((mode) => (
+                    <button
+                      key={mode.value}
+                      onClick={() => setPreviewMode(mode.value)}
+                      className={`px-2 py-1 text-[10px] transition ${
+                        previewMode === mode.value
+                          ? "bg-neutral-700 text-white"
+                          : "text-neutral-400 hover:text-white"
+                      }`}
+                      title={`Vista previa ${mode.label}`}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Preview container — width constrained for device simulation */}
+            <div className="flex justify-center">
+              <div
+                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 transition-all duration-300"
+                style={{ maxWidth: previewWidth }}
+              >
+                {photos.length > 0 ? (
+                  <LayoutEngine
+                    photos={photos}
+                    layout={previewConfig}
+                    onPhotoClick={setLightboxId}
+                    rounded={false}
+                  />
+                ) : (
+                  <div className="flex h-48 items-center justify-center text-sm text-neutral-500">
+                    Agrega fotos a la coleccion para ver el preview
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Drag-and-drop reorder + span controls */}
+          {photos.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-medium text-neutral-300">
+                  Orden y tamaño
+                </h2>
+                <p className="text-[10px] text-neutral-500">
+                  Arrastra para reordenar · hover para cambiar tamaño
+                </p>
+              </div>
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-3">
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={photos.map((p) => p.id)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-6">
+                      {photos.map((photo) => (
+                        <SortablePhotoThumb
+                          key={photo.id}
+                          photo={photo}
+                          span={form.photoOverrides[photo.id]?.span || 1}
+                          maxSpan={form.columnsDesktop}
+                          onChangeSpan={handleChangeSpan}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -353,7 +614,9 @@ export default function CollectionSettingsPage({
         </h2>
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-neutral-400">Nombre</label>
+            <label className="mb-1 block text-xs text-neutral-400">
+              Nombre
+            </label>
             <input
               defaultValue={collection.name}
               onBlur={(e) => handleUpdateCollection("name", e.target.value)}
@@ -361,20 +624,28 @@ export default function CollectionSettingsPage({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-400">Descripcion</label>
+            <label className="mb-1 block text-xs text-neutral-400">
+              Descripcion
+            </label>
             <textarea
               defaultValue={collection.description || ""}
-              onBlur={(e) => handleUpdateCollection("description", e.target.value)}
+              onBlur={(e) =>
+                handleUpdateCollection("description", e.target.value)
+              }
               rows={2}
               className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-neutral-600"
             />
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="mb-1 block text-xs text-neutral-400">Visibilidad</label>
+              <label className="mb-1 block text-xs text-neutral-400">
+                Visibilidad
+              </label>
               <select
                 value={collection.visibility}
-                onChange={(e) => handleUpdateCollection("visibility", e.target.value)}
+                onChange={(e) =>
+                  handleUpdateCollection("visibility", e.target.value)
+                }
                 className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none"
               >
                 <option value="private">Privada</option>
@@ -383,10 +654,14 @@ export default function CollectionSettingsPage({
               </select>
             </div>
             <div className="flex-1">
-              <label className="mb-1 block text-xs text-neutral-400">Tipo</label>
+              <label className="mb-1 block text-xs text-neutral-400">
+                Tipo
+              </label>
               <select
                 value={collection.type}
-                onChange={(e) => handleUpdateCollection("type", e.target.value)}
+                onChange={(e) =>
+                  handleUpdateCollection("type", e.target.value)
+                }
                 className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none"
               >
                 <option value="album">Album</option>
@@ -399,7 +674,9 @@ export default function CollectionSettingsPage({
           {/* Share link */}
           {collection.visibility !== "private" && (
             <div className="rounded-md bg-neutral-800 p-3">
-              <p className="mb-1 text-xs text-neutral-400">Link para compartir</p>
+              <p className="mb-1 text-xs text-neutral-400">
+                Link para compartir
+              </p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 break-all text-xs text-blue-400">
                   {collection.visibility === "public"
