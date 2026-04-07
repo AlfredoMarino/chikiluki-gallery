@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { PhotoGrid } from "@/components/photos/photo-grid";
+import { PhotoLightbox } from "@/components/photos/photo-lightbox";
+import { BatchActions } from "@/components/photos/batch-actions";
+import { AddToCollectionModal } from "@/components/photos/add-to-collection-modal";
+import { useUIStore } from "@/stores/ui-store";
 import Link from "next/link";
 import type { Photo } from "@/types";
 
 export default function PhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addToCollectionIds, setAddToCollectionIds] = useState<string[] | null>(null);
+  const { lightboxOpen, lightboxPhotoId, openLightbox, closeLightbox } =
+    useUIStore();
 
   const fetchPhotos = async () => {
     try {
@@ -24,10 +31,8 @@ export default function PhotosPage() {
     fetchPhotos();
   }, []);
 
-  const handleDelete = async (ids: string[]) => {
-    for (const id of ids) {
-      await fetch(`/api/photos/${id}`, { method: "DELETE" });
-    }
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/photos/${id}`, { method: "DELETE" });
     fetchPhotos();
   };
 
@@ -58,7 +63,34 @@ export default function PhotosPage() {
           Subir fotos
         </Link>
       </div>
-      <PhotoGrid photos={photos} onDeleteSelected={handleDelete} />
+
+      <PhotoGrid
+        photos={photos}
+        onDelete={handleDelete}
+        onAddToCollection={(photoId) => setAddToCollectionIds([photoId])}
+      />
+
+      <BatchActions onRefresh={fetchPhotos} />
+
+      {lightboxOpen && (
+        <PhotoLightbox
+          photos={photos}
+          currentId={lightboxPhotoId}
+          onClose={closeLightbox}
+          onNavigate={openLightbox}
+        />
+      )}
+
+      {addToCollectionIds && (
+        <AddToCollectionModal
+          photoIds={addToCollectionIds}
+          onClose={() => setAddToCollectionIds(null)}
+          onDone={() => {
+            setAddToCollectionIds(null);
+            fetchPhotos();
+          }}
+        />
+      )}
     </div>
   );
 }

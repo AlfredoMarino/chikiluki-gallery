@@ -6,10 +6,19 @@ import type { Photo } from "@/types";
 
 interface PhotoGridProps {
   photos: Photo[];
-  onDeleteSelected?: (ids: string[]) => void;
+  onDelete?: (id: string) => void;
+  onAddToCollection?: (photoId: string) => void;
+  onRemoveFromCollection?: (photoId: string) => void;
+  inCollection?: boolean;
 }
 
-export function PhotoGrid({ photos, onDeleteSelected }: PhotoGridProps) {
+export function PhotoGrid({
+  photos,
+  onDelete,
+  onAddToCollection,
+  onRemoveFromCollection,
+  inCollection = false,
+}: PhotoGridProps) {
   const { selectedIds, isSelecting, clear, selectAll } = useSelectionStore();
 
   if (photos.length === 0) {
@@ -28,8 +37,7 @@ export function PhotoGrid({ photos, onDeleteSelected }: PhotoGridProps) {
             d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"
           />
         </svg>
-        <p className="text-sm">No hay fotos aún</p>
-        <p className="mt-1 text-xs">Sube tus primeras fotos para empezar</p>
+        <p className="text-sm">No hay fotos</p>
       </div>
     );
   }
@@ -54,25 +62,20 @@ export function PhotoGrid({ photos, onDeleteSelected }: PhotoGridProps) {
           >
             Cancelar
           </button>
-          <div className="flex-1" />
-          {onDeleteSelected && selectedIds.size > 0 && (
-            <button
-              onClick={() => {
-                onDeleteSelected(Array.from(selectedIds));
-                clear();
-              }}
-              className="text-sm text-red-400 hover:text-red-300"
-            >
-              Eliminar
-            </button>
-          )}
         </div>
       )}
 
       {/* Grid */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {photos.map((photo) => (
-          <PhotoCard key={photo.id} photo={photo} />
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            onDelete={onDelete}
+            onAddToCollection={onAddToCollection}
+            onRemoveFromCollection={onRemoveFromCollection}
+            inCollection={inCollection}
+          />
         ))}
       </div>
     </div>
