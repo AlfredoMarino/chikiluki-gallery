@@ -25,6 +25,7 @@ export function PresentationMode({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const prevNeedsRotation = useRef(false);
 
   const photo = photos[index];
   const isLandscapePhoto = photo && photo.width > photo.height;
@@ -45,15 +46,20 @@ export function PresentationMode({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  // Show rotation hint briefly when a landscape photo is shown on portrait screen
+  // Show rotation hint only on the transition from "no rotation needed" to "needs rotation"
+  // (not on every photo change when several consecutive photos are landscape)
   useEffect(() => {
-    if (needsRotation) {
+    if (needsRotation && !prevNeedsRotation.current) {
       setShowHint(true);
       const t = setTimeout(() => setShowHint(false), 2500);
+      prevNeedsRotation.current = true;
       return () => clearTimeout(t);
     }
-    setShowHint(false);
-  }, [needsRotation, index]);
+    if (!needsRotation) {
+      prevNeedsRotation.current = false;
+      setShowHint(false);
+    }
+  }, [needsRotation]);
 
   // Reset image loaded state on photo change
   useEffect(() => {
@@ -125,7 +131,8 @@ export function PresentationMode({
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose, goNext, goPrev]);
 
-  // Touch swipe
+  // Touch swipe — when the stage is rotated, accept swipes on either axis
+  // since we don't know which way the user physically tilted the phone.
   useEffect(() => {
     let startX = 0;
     let startY = 0;
@@ -136,10 +143,10 @@ export function PresentationMode({
     const handleEnd = (e: TouchEvent) => {
       const dx = startX - e.changedTouches[0].clientX;
       const dy = startY - e.changedTouches[0].clientY;
-      // Only handle horizontal swipes (ignore vertical scrolls)
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-        dx > 0 ? goNext() : goPrev();
-      }
+      const primary = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
+      if (Math.abs(primary) < 50) return;
+      if (!needsRotation && Math.abs(dx) < Math.abs(dy)) return;
+      primary > 0 ? goNext() : goPrev();
     };
     window.addEventListener("touchstart", handleStart, { passive: true });
     window.addEventListener("touchend", handleEnd, { passive: true });
@@ -147,19 +154,18 @@ export function PresentationMode({
       window.removeEventListener("touchstart", handleStart);
       window.removeEventListener("touchend", handleEnd);
     };
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, needsRotation]);
 
   if (!photo) return null;
 
-  // For landscape photos on portrait screens:
-  // Rotate 90° and swap dimensions so the image fills the screen
-  const rotateStyle = needsRotation
+  // Rotating stage: when a landscape photo is shown on a portrait screen,
+  // rotate the whole stage (image AND controls) so that after the user
+  // physically tilts the phone the controls end up on the correct edges.
+  const stageStyle: React.CSSProperties = needsRotation
     ? {
-        transform: "rotate(90deg)",
         width: "100vh",
         height: "100vw",
-        maxWidth: "100vh",
-        maxHeight: "100vw",
+        transform: "rotate(90deg)",
       }
     : {
         width: "100%",
@@ -167,27 +173,26 @@ export function PresentationMode({
       };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black">
-      {/* Base64 placeholder background */}
-      {photo.thumbBase64 && !imageLoaded && (
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${photo.thumbBase64})`,
-            backgroundSize: "contain",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            filter: "blur(20px)",
-            transform: needsRotation ? "rotate(90deg)" : undefined,
-          }}
-        />
-      )}
-
-      {/* Main image container */}
+    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-black">
       <div
-        className="flex items-center justify-center transition-transform duration-300"
-        style={rotateStyle}
+        className="relative flex items-center justify-center transition-transform duration-300"
+        style={stageStyle}
       >
+        {/* Base64 placeholder background */}
+        {photo.thumbBase64 && !imageLoaded && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${photo.thumbBase64})`,
+              backgroundSize: "contain",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              filter: "blur(20px)",
+            }}
+          />
+        )}
+
+        {/* Main image */}
         <img
           key={photo.id}
           src={`/api/drive/image/${photo.id}?size=full`}
@@ -198,116 +203,112 @@ export function PresentationMode({
           }`}
           draggable={false}
         />
-      </div>
 
-      {/* Rotation hint */}
-      {showHint && (
-        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-          <div className="animate-pulse rounded-2xl bg-black/80 px-6 py-4 text-center">
+        {/* Rotation hint */}
+        {showHint && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+            <div className="animate-pulse rounded-2xl bg-black/80 px-6 py-4 text-center">
+              <svg
+                className="mx-auto mb-2 h-10 w-10 animate-[spin_2s_ease-in-out_1] text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3"
+                />
+              </svg>
+              <p className="text-sm text-white">Gira tu dispositivo</p>
+            </div>
+          </div>
+        )}
+
+        {/* Controls — auto-hide */}
+        <div
+          className={`absolute inset-0 transition-opacity duration-300 ${
+            controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <button
+            onClick={onClose}
+            className="pointer-events-auto absolute right-3 top-3 z-30 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition hover:bg-black/80"
+          >
             <svg
-              className="mx-auto mb-2 h-10 w-10 animate-[spin_2s_ease-in-out_1] text-white"
+              className="h-5 w-5"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
+              strokeWidth={2}
               stroke="currentColor"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3"
+                d="M6 18 18 6M6 6l12 12"
               />
             </svg>
-            <p className="text-sm text-white">Gira tu dispositivo</p>
+          </button>
+
+          <div className="pointer-events-none absolute left-3 top-3 z-30 rounded-full bg-black/60 px-3 py-1 text-sm text-white backdrop-blur-sm">
+            {index + 1} / {photos.length}
           </div>
-        </div>
-      )}
 
-      {/* Controls — auto-hide */}
-      <div
-        className={`transition-opacity duration-300 ${
-          controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 z-30 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition hover:bg-black/80"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18 18 6M6 6l12 12"
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-30 h-0.5 bg-white/10">
+            <div
+              className="h-full bg-white/60 transition-all duration-300"
+              style={{
+                width: `${((index + 1) / photos.length) * 100}%`,
+              }}
             />
-          </svg>
-        </button>
+          </div>
 
-        {/* Counter */}
-        <div className="absolute left-3 top-3 z-30 rounded-full bg-black/60 px-3 py-1 text-sm text-white backdrop-blur-sm">
-          {index + 1} / {photos.length}
+          {index > 0 && (
+            <button
+              onClick={goPrev}
+              className="pointer-events-auto absolute left-0 top-0 z-20 flex h-full w-16 items-center justify-start pl-2 md:w-20"
+            >
+              <span className="rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 19.5 8.25 12l7.5-7.5"
+                  />
+                </svg>
+              </span>
+            </button>
+          )}
+          {index < photos.length - 1 && (
+            <button
+              onClick={goNext}
+              className="pointer-events-auto absolute right-0 top-0 z-20 flex h-full w-16 items-center justify-end pr-2 md:w-20"
+            >
+              <span className="rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                  />
+                </svg>
+              </span>
+            </button>
+          )}
         </div>
-
-        {/* Progress bar */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 h-0.5 bg-white/10">
-          <div
-            className="h-full bg-white/60 transition-all duration-300"
-            style={{
-              width: `${((index + 1) / photos.length) * 100}%`,
-            }}
-          />
-        </div>
-
-        {/* Prev/Next - larger touch targets for mobile */}
-        {index > 0 && (
-          <button
-            onClick={goPrev}
-            className="absolute left-0 top-0 z-20 flex h-full w-16 items-center justify-start pl-2 md:w-20"
-          >
-            <span className="rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 19.5 8.25 12l7.5-7.5"
-                />
-              </svg>
-            </span>
-          </button>
-        )}
-        {index < photos.length - 1 && (
-          <button
-            onClick={goNext}
-            className="absolute right-0 top-0 z-20 flex h-full w-16 items-center justify-end pr-2 md:w-20"
-          >
-            <span className="rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                />
-              </svg>
-            </span>
-          </button>
-        )}
       </div>
     </div>
   );
