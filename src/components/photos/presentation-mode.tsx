@@ -161,21 +161,26 @@ export function PresentationMode({
   // Rotating stage: when a landscape photo is shown on a portrait screen,
   // rotate the whole stage (image AND controls) so that after the user
   // physically tilts the phone the controls end up on the correct edges.
+  // Absolute positioning (not flex) so the stage can be larger than the
+  // viewport on its pre-rotation axis without being shrunk by the parent.
   const stageStyle: React.CSSProperties = needsRotation
     ? {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
         width: "100vh",
         height: "100vw",
-        transform: "rotate(90deg)",
+        transform: "translate(-50%, -50%) rotate(90deg)",
       }
     : {
-        width: "100%",
-        height: "100%",
+        position: "absolute",
+        inset: 0,
       };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-black">
+    <div className="fixed inset-0 z-[200] overflow-hidden bg-black">
       <div
-        className="relative flex items-center justify-center transition-transform duration-300"
+        className="flex items-center justify-center transition-transform duration-300"
         style={stageStyle}
       >
         {/* Base64 placeholder background */}
