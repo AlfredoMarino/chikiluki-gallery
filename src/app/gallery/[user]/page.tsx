@@ -1,25 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-
-interface PublicCollection {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  type: string;
-  photoCount: number;
-}
-
-async function getPublicCollections(
-  userName: string
-): Promise<PublicCollection[]> {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/public/gallery/${userName}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return res.json();
-}
+import { getPublicCollectionsByUser } from "@/lib/data/public";
 
 export async function generateMetadata({
   params,
@@ -39,7 +20,7 @@ export default async function PublicGalleryPage({
   params: Promise<{ user: string }>;
 }) {
   const { user } = await params;
-  const collections = await getPublicCollections(user);
+  const collections = await getPublicCollectionsByUser(user);
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-12">

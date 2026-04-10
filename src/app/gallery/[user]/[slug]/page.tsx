@@ -1,24 +1,6 @@
 import type { Metadata } from "next";
 import { PublicCollectionView } from "@/components/collections/public-collection-view";
-import type { Photo, LayoutConfig, Collection } from "@/types";
-
-interface PublicCollectionData extends Collection {
-  layout: LayoutConfig | null;
-  photos: Photo[];
-}
-
-async function getPublicCollection(
-  userName: string,
-  slug: string
-): Promise<PublicCollectionData | null> {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const res = await fetch(
-    `${baseUrl}/api/public/gallery/${userName}/${slug}`,
-    { cache: "no-store" }
-  );
-  if (!res.ok) return null;
-  return res.json();
-}
+import { getPublicCollectionBySlug } from "@/lib/data/public";
 
 export async function generateMetadata({
   params,
@@ -26,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ user: string; slug: string }>;
 }): Promise<Metadata> {
   const { user, slug } = await params;
-  const data = await getPublicCollection(user, slug);
+  const data = await getPublicCollectionBySlug(user, slug);
   return {
     title: data
       ? `${data.name} — ${user} — Chikiluki Gallery`
@@ -41,7 +23,7 @@ export default async function PublicCollectionPage({
   params: Promise<{ user: string; slug: string }>;
 }) {
   const { user, slug } = await params;
-  const data = await getPublicCollection(user, slug);
+  const data = await getPublicCollectionBySlug(user, slug);
 
   if (!data) {
     return (

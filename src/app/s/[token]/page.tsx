@@ -1,22 +1,6 @@
 import type { Metadata } from "next";
 import { PublicCollectionView } from "@/components/collections/public-collection-view";
-import type { Photo, LayoutConfig, Collection } from "@/types";
-
-interface SharedCollectionData extends Collection {
-  layout: LayoutConfig | null;
-  photos: Photo[];
-}
-
-async function getSharedCollection(
-  token: string
-): Promise<SharedCollectionData | null> {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/public/shared/${token}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return res.json();
-}
+import { getCollectionByShareToken } from "@/lib/data/public";
 
 export async function generateMetadata({
   params,
@@ -24,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ token: string }>;
 }): Promise<Metadata> {
   const { token } = await params;
-  const data = await getSharedCollection(token);
+  const data = await getCollectionByShareToken(token);
   return {
     title: data ? `${data.name} — Chikiluki Gallery` : "No encontrada",
     description: data?.description || "Coleccion compartida",
@@ -37,7 +21,7 @@ export default async function SharedCollectionPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const data = await getSharedCollection(token);
+  const data = await getCollectionByShareToken(token);
 
   if (!data) {
     return (
