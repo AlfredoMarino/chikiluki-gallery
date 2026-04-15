@@ -33,6 +33,8 @@ export const orientationEnum = pgEnum("orientation", [
   "square",
 ]);
 
+export const photoMediumEnum = pgEnum("photo_medium", ["digital", "film"]);
+
 export const tagSourceEnum = pgEnum("tag_source", ["manual", "ai"]);
 
 export const aiJobTypeEnum = pgEnum("ai_job_type", [
@@ -115,7 +117,7 @@ export const photos = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     driveFileId: text("drive_file_id").notNull(),
-    driveThumbId: text("drive_thumb_id"),
+    driveThumbId: text("drive_thumb_id").notNull(),
     originalName: text("original_name").notNull(),
     mimeType: text("mime_type").notNull(),
     width: integer("width").notNull(),
@@ -129,11 +131,49 @@ export const photos = pgTable(
     fileHash: text("file_hash").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     takenAt: timestamp("taken_at", { mode: "date" }),
+    // Session / folder metadata (strict convention)
+    medium: photoMediumEnum("medium").notNull(),
+    sessionYear: integer("session_year").notNull(),
+    camera: text("camera").notNull(),
+    sessionDate: text("session_date").notNull(),
+    sessionFolder: text("session_folder").notNull(),
+    sessionSeq: integer("session_seq").notNull(),
+    driveFolderId: text("drive_folder_id").notNull(),
+    driveThumbFolderId: text("drive_thumb_folder_id").notNull(),
+    storedFilename: text("stored_filename").notNull(),
+    digitalDescription: text("digital_description"),
+    filmStock: text("film_stock"),
+    filmIso: integer("film_iso"),
+    filmDescriptors: text("film_descriptors"),
   },
   (table) => [
     index("photos_user_idx").on(table.userId),
     uniqueIndex("photos_hash_user_idx").on(table.fileHash, table.userId),
     index("photos_created_idx").on(table.createdAt),
+    index("photos_session_folder_idx").on(table.userId, table.sessionFolder),
+    index("photos_medium_year_idx").on(
+      table.userId,
+      table.medium,
+      table.sessionYear
+    ),
+    index("photos_camera_idx").on(table.userId, table.camera),
+  ]
+);
+
+export const photoSessionCounters = pgTable(
+  "photo_session_counters",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sessionFolder: text("session_folder").notNull(),
+    nextSeq: integer("next_seq").notNull().default(1),
+    driveFolderId: text("drive_folder_id"),
+    driveThumbFolderId: text("drive_thumb_folder_id"),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.sessionFolder] }),
   ]
 );
 

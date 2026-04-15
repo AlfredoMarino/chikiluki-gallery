@@ -1,28 +1,74 @@
 import { drive_v3 } from "googleapis";
-import { createDriveClient, DRIVE_ROOT_FOLDER, DRIVE_FOLDERS } from "./client";
+import { createDriveClient, DRIVE_ROOT_FOLDER, DRIVE_TOP } from "./client";
+import type { Medium } from "./path";
 import { Readable } from "stream";
 
 /**
- * Ensure the app's folder structure exists in the user's Drive.
- * Creates "Chikiluki Gallery/originals" and "Chikiluki Gallery/thumbnails" if missing.
- * Returns the folder IDs.
+ * Ensure the two top-level folders exist:
+ *   - "Chikiluki Gallery/raw"
+ *   - "Chikiluki Gallery/thumbnails"
+ *
+ * Cheap after first call (one Drive list per level).
  */
-export async function ensureDriveFolders(accessToken: string) {
+export async function ensureDriveRoots(accessToken: string): Promise<{
+  galleryRootId: string;
+  rawRootId: string;
+  thumbsRootId: string;
+}> {
   const drive = createDriveClient(accessToken);
 
-  const rootId = await findOrCreateFolder(drive, DRIVE_ROOT_FOLDER, "root");
-  const originalsId = await findOrCreateFolder(
+  const galleryRootId = await findOrCreateFolder(
     drive,
-    DRIVE_FOLDERS.originals,
-    rootId
+    DRIVE_ROOT_FOLDER,
+    "root"
   );
-  const thumbnailsId = await findOrCreateFolder(
+  const rawRootId = await findOrCreateFolder(
     drive,
-    DRIVE_FOLDERS.thumbnails,
-    rootId
+    DRIVE_TOP.raw,
+    galleryRootId
+  );
+  const thumbsRootId = await findOrCreateFolder(
+    drive,
+    DRIVE_TOP.thumbnails,
+    galleryRootId
   );
 
-  return { rootId, originalsId, thumbnailsId };
+  return { galleryRootId, rawRootId, thumbsRootId };
+}
+
+/**
+ * Walk (or create) the per-session folder hierarchy under both `raw/` and
+ * `thumbnails/` and return the two leaf folder IDs.
+ *
+ *   raw/{medium}/{year}/{camera}/{level4}
+ *   thumbnails/{medium}/{year}/{camera}/{level4}
+ *
+ * This makes ~10 Drive API calls on a cold session. Cache the returned IDs on
+ * `photo_session_counters` so subsequent uploads to the same session skip the
+ * walk entirely.
+ */
+export async function ensureSessionFolders(
+  accessToken: string,
+  p: { medium: Medium; year: number; camera: string; level4: string }
+): Promise<{ rawFolderId: string; thumbFolderId: string }> {
+  const drive = createDriveClient(accessToken);
+  const { rawRootId, thumbsRootId } = await ensureDriveRoots(accessToken);
+
+  const yearStr = String(p.year);
+
+  // raw/{medium}/{year}/{camera}/{level4}
+  const rawMedium = await findOrCreateFolder(drive, p.medium, rawRootId);
+  const rawYear = await findOrCreateFolder(drive, yearStr, rawMedium);
+  const rawCamera = await findOrCreateFolder(drive, p.camera, rawYear);
+  const rawFolderId = await findOrCreateFolder(drive, p.level4, rawCamera);
+
+  // thumbnails/{medium}/{year}/{camera}/{level4}
+  const thumbMedium = await findOrCreateFolder(drive, p.medium, thumbsRootId);
+  const thumbYear = await findOrCreateFolder(drive, yearStr, thumbMedium);
+  const thumbCamera = await findOrCreateFolder(drive, p.camera, thumbYear);
+  const thumbFolderId = await findOrCreateFolder(drive, p.level4, thumbCamera);
+
+  return { rawFolderId, thumbFolderId };
 }
 
 /**
@@ -60,23 +106,6 @@ export async function uploadToDrive(
 }
 
 /**
- * Download a file from Google Drive as a Buffer.
- */
-export async function downloadFromDrive(
-  accessToken: string,
-  fileId: string
-): Promise<Buffer> {
-  const drive = createDriveClient(accessToken);
-
-  const response = await drive.files.get(
-    { fileId, alt: "media" },
-    { responseType: "arraybuffer" }
-  );
-
-  return Buffer.from(response.data as ArrayBuffer);
-}
-
-/**
  * Stream a file from Google Drive without buffering.
  * Returns a fetch Response whose body is a ReadableStream.
  * Avoids Vercel's 4.5MB serverless payload limit.
@@ -91,7 +120,9 @@ export async function streamFromDrive(
   });
 
   if (!response.ok) {
-    throw new Error(`Drive download failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Drive download failed: ${response.status} ${response.statusText}`
+    );
   }
 
   return response;
@@ -115,9 +146,10 @@ async function findOrCreateFolder(
   name: string,
   parentId: string
 ): Promise<string> {
-  // Search for existing folder
+  // Drive query syntax requires escaping single quotes in the name.
+  const escaped = name.replace(/'/g, "\\'");
   const query = [
-    `name = '${name}'`,
+    `name = '${escaped}'`,
     `mimeType = 'application/vnd.google-apps.folder'`,
     `'${parentId}' in parents`,
     `trashed = false`,
@@ -133,7 +165,6 @@ async function findOrCreateFolder(
     return existing.data.files[0].id;
   }
 
-  // Create folder
   const created = await drive.files.create({
     requestBody: {
       name,

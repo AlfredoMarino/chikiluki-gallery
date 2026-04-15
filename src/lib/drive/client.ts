@@ -13,8 +13,12 @@ export function createDriveClient(accessToken: string) {
 /** Name of the root folder the app creates in the user's Drive */
 export const DRIVE_ROOT_FOLDER = "Chikiluki Gallery";
 
-/** Subfolder names inside the root folder */
-export const DRIVE_FOLDERS = {
-  originals: "originals",
+/**
+ * Top-level subfolder names inside the root folder.
+ * `raw/` holds full-resolution originals organized by medium/year/camera/session.
+ * `thumbnails/` mirrors the same hierarchy with JPEG previews.
+ */
+export const DRIVE_TOP = {
+  raw: "raw",
   thumbnails: "thumbnails",
 } as const;
