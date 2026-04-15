@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { photos, collectionPhotos, collections } from "@/lib/db/schema";
 import { eq, and, or } from "drizzle-orm";
 import { getGoogleAccessToken } from "@/lib/auth/helpers";
-import { downloadFromDrive } from "@/lib/drive/service";
+import { streamFromDrive } from "@/lib/drive/service";
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +18,6 @@ export async function GET(
   let photo;
 
   if (session?.user?.id) {
-    // Owner can access any of their photos
     [photo] = await db
       .select()
       .from(photos)
@@ -57,15 +56,19 @@ export async function GET(
 
   try {
     const accessToken = await getGoogleAccessToken(photo.userId);
-    const imageBuffer = await downloadFromDrive(accessToken, driveId);
+    const driveResponse = await streamFromDrive(accessToken, driveId);
 
-    return new Response(new Uint8Array(imageBuffer), {
-      headers: {
-        "Content-Type": photo.mimeType,
-        "Cache-Control": "public, max-age=86400, s-maxage=604800",
-        "Content-Length": imageBuffer.byteLength.toString(),
-      },
-    });
+    const headers: HeadersInit = {
+      "Content-Type": photo.mimeType,
+      "Cache-Control": "public, max-age=86400, s-maxage=604800",
+    };
+
+    const contentLength = driveResponse.headers.get("content-length");
+    if (contentLength) {
+      headers["Content-Length"] = contentLength;
+    }
+
+    return new Response(driveResponse.body, { headers });
   } catch (error) {
     console.error("Drive image proxy error:", error);
     return new Response("Failed to load image", { status: 502 });

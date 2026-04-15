@@ -77,6 +77,27 @@ export async function downloadFromDrive(
 }
 
 /**
+ * Stream a file from Google Drive without buffering.
+ * Returns a fetch Response whose body is a ReadableStream.
+ * Avoids Vercel's 4.5MB serverless payload limit.
+ */
+export async function streamFromDrive(
+  accessToken: string,
+  fileId: string
+): Promise<Response> {
+  const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Drive download failed: ${response.status} ${response.statusText}`);
+  }
+
+  return response;
+}
+
+/**
  * Delete a file from Google Drive.
  */
 export async function deleteFromDrive(
