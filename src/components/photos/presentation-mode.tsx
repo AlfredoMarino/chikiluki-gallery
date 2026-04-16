@@ -92,42 +92,10 @@ export function PresentationMode({
     };
   }, []);
 
-  // Try to go fullscreen.
-  //
-  // `requestFullscreen` only works inside a user-gesture stack. When the user
-  // clicks the "Presentación" button, mount happens inside that click handler
-  // so the immediate call works. But when we auto-open via `?present=1` on
-  // page load, there is no gesture → the browser silently rejects the call
-  // (the `.catch` swallows the NotAllowedError).
-  //
-  // Fallback: if we are not in fullscreen after the first attempt, register
-  // one-shot listeners on the next user gesture and retry from there.
+  // Try to go fullscreen
   useEffect(() => {
-    const tryEnter = () => {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    };
-
-    tryEnter();
-
-    let cleanupGestureListeners: (() => void) | null = null;
-    if (!document.fullscreenElement) {
-      const onGesture = () => {
-        tryEnter();
-        cleanupGestureListeners?.();
-      };
-      const opts = { once: true, capture: true } as const;
-      window.addEventListener("pointerdown", onGesture, opts);
-      window.addEventListener("keydown", onGesture, opts);
-      window.addEventListener("touchstart", onGesture, opts);
-      cleanupGestureListeners = () => {
-        window.removeEventListener("pointerdown", onGesture, opts);
-        window.removeEventListener("keydown", onGesture, opts);
-        window.removeEventListener("touchstart", onGesture, opts);
-      };
-    }
-
+    document.documentElement.requestFullscreen?.().catch(() => {});
     return () => {
-      cleanupGestureListeners?.();
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => {});
       }
