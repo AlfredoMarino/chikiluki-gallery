@@ -43,7 +43,7 @@ export type FilmSession = {
 
 export type Session = DigitalSession | FilmSession;
 
-export const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "tiff"] as const;
+export const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png"] as const;
 export type AllowedExtension = (typeof ALLOWED_EXTENSIONS)[number];
 
 const MAX_SLUG_LENGTH = 48;

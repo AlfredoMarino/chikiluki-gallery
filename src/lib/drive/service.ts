@@ -113,6 +113,9 @@ export async function uploadToDrive(
  * valid for ~7 days. Drive's resumable protocol supports pause/resume by
  * querying the URL with Content-Range: bytes *\/{total}.
  *
+ * CORS: Drive enables CORS on the returned upload URL **only if** the
+ * original POST here includes the browser's Origin. Without this header the
+ * client's PUT is blocked with "No 'Access-Control-Allow-Origin' header".
  * Docs: https://developers.google.com/drive/api/guides/manage-uploads#resumable
  */
 export async function createResumableUploadSession(
@@ -122,6 +125,8 @@ export async function createResumableUploadSession(
     mimeType: string;
     size: number;
     folderId: string;
+    /** Browser origin that will PUT the bytes (required for CORS). */
+    origin: string;
   }
 ): Promise<string> {
   const response = await fetch(
@@ -133,6 +138,7 @@ export async function createResumableUploadSession(
         "Content-Type": "application/json; charset=UTF-8",
         "X-Upload-Content-Type": file.mimeType,
         "X-Upload-Content-Length": String(file.size),
+        Origin: file.origin,
       },
       body: JSON.stringify({
         name: file.name,

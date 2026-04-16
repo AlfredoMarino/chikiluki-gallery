@@ -75,6 +75,15 @@ export async function POST(request: NextRequest) {
   }
   const userId = session.user.id;
 
+  // Captured for CORS on the resumable upload session; the browser's PUT must
+  // come from this exact origin.
+  const origin =
+    request.headers.get("origin") ??
+    (process.env.NEXT_PUBLIC_URL ? new URL(process.env.NEXT_PUBLIC_URL).origin : null);
+  if (!origin) {
+    return errorResponse("Missing Origin header", 400);
+  }
+
   let body: { session: unknown; files: IncomingFile[] };
   try {
     body = await request.json();
@@ -248,6 +257,7 @@ export async function POST(request: NextRequest) {
           mimeType: entry.mimeType,
           size: entry.size,
           folderId: folderIds!.rawFolderId,
+          origin,
         });
 
         const token = signUploadToken({

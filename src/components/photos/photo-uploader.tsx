@@ -91,7 +91,7 @@ const INITIAL_FORM: FormState = {
   descriptors: "",
 };
 
-const ACCEPT_ATTR = ".jpg,.jpeg,.png,.tiff,image/jpeg,image/png,image/tiff";
+const ACCEPT_ATTR = ".jpg,.jpeg,.png,image/jpeg,image/png";
 const UPLOAD_CONCURRENCY = 3;
 
 // ─── Component ───────────────────────────────────────────

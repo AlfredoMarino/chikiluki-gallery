@@ -106,7 +106,6 @@ assertThrows(() => parseIso(10000), "iso", "10000 rejected");
 console.log("\ngetExtensionFromFile");
 assertEq(getExtensionFromFile("photo.jpg"), "jpg", ".jpg");
 assertEq(getExtensionFromFile("PHOTO.JPEG"), "jpeg", ".JPEG → jpeg");
-assertEq(getExtensionFromFile("scan.tiff"), "tiff", ".tiff");
 assertEq(getExtensionFromFile("a.b.png"), "png", "multi-dot uses last");
 assertThrows(() => getExtensionFromFile(""), "file", "empty rejected");
 assertThrows(() => getExtensionFromFile("noext"), "file", "no ext rejected");
@@ -119,6 +118,11 @@ assertThrows(
   () => getExtensionFromFile("photo.avif"),
   "file",
   ".avif rejected"
+);
+assertThrows(
+  () => getExtensionFromFile("scan.tiff"),
+  "file",
+  ".tiff rejected"
 );
 
 // ─── buildLevel4Folder ───────────────────────────────────
