@@ -20,6 +20,20 @@ export default function PhotosPage() {
   const [view, setView] = useState<View>("session");
   const [cameraFilter, setCameraFilter] = useState<string>("");
   const [yearFilter, setYearFilter] = useState<string>("");
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(
+    new Set()
+  );
+
+  const SESSION_PREVIEW_COUNT = 5;
+
+  const toggleSession = (sessionFolder: string) => {
+    setExpandedSessions((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionFolder)) next.delete(sessionFolder);
+      else next.add(sessionFolder);
+      return next;
+    });
+  };
   const { lightboxOpen, lightboxPhotoId, openLightbox, closeLightbox } =
     useUIStore();
 
@@ -180,23 +194,44 @@ export default function PhotosPage() {
           {sessionGroups.length === 0 && (
             <p className="text-sm text-neutral-500">No hay fotos.</p>
           )}
-          {sessionGroups.map((group) => (
-            <section key={group.sessionFolder} className="space-y-3">
-              <h2 className="font-mono text-sm text-neutral-300">
-                {group.sessionFolder}{" "}
-                <span className="text-neutral-600">
-                  · {group.photos.length}
-                </span>
-              </h2>
-              <PhotoGrid
-                photos={group.photos}
-                onDelete={handleDelete}
-                onAddToCollection={(photoId) =>
-                  setAddToCollectionIds([photoId])
-                }
-              />
-            </section>
-          ))}
+          {sessionGroups.map((group) => {
+            const isExpanded = expandedSessions.has(group.sessionFolder);
+            const hasMore = group.photos.length > SESSION_PREVIEW_COUNT;
+            const visiblePhotos =
+              isExpanded || !hasMore
+                ? group.photos
+                : group.photos.slice(0, SESSION_PREVIEW_COUNT);
+            const hiddenCount = group.photos.length - SESSION_PREVIEW_COUNT;
+
+            return (
+              <section key={group.sessionFolder} className="space-y-3">
+                <h2 className="font-mono text-sm text-neutral-300">
+                  {group.sessionFolder}{" "}
+                  <span className="text-neutral-600">
+                    · {group.photos.length}
+                  </span>
+                </h2>
+                <PhotoGrid
+                  photos={visiblePhotos}
+                  onDelete={handleDelete}
+                  onAddToCollection={(photoId) =>
+                    setAddToCollectionIds([photoId])
+                  }
+                />
+                {hasMore && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSession(group.sessionFolder)}
+                    className="text-xs text-neutral-400 transition hover:text-white"
+                  >
+                    {isExpanded
+                      ? "▲ Mostrar menos"
+                      : `▼ Ver ${hiddenCount} más`}
+                  </button>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 

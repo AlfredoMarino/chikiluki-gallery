@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { LayoutEngine } from "@/components/layouts/layout-engine";
 import { PhotoLightbox } from "@/components/photos/photo-lightbox";
 import { PresentationMode } from "@/components/photos/presentation-mode";
@@ -17,6 +18,17 @@ export function PublicCollectionView({
 }: PublicCollectionViewProps) {
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const [presentationIndex, setPresentationIndex] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+
+  // Auto-open presentation mode when the share link carries `?present=1`.
+  // Only fires on mount (or when the photo list first arrives non-empty) so
+  // closing the presentation doesn't immediately re-open it.
+  useEffect(() => {
+    if (searchParams.get("present") === "1" && photos.length > 0) {
+      setPresentationIndex(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photos.length]);
 
   return (
     <>

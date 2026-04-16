@@ -696,6 +696,29 @@ export default function CollectionSettingsPage({
                   Copiar
                 </button>
               </div>
+
+              {/* Variante que abre presentación al entrar. Sólo tiene sentido
+                  para links privados (/s/{token}); en colecciones públicas
+                  preferimos no enterrar la galería bajo un modal. */}
+              {collection.visibility === "unlisted" && (
+                <div className="mt-2 flex items-center gap-2 border-t border-neutral-700 pt-2">
+                  <p className="flex-1 text-[10px] text-neutral-500">
+                    ¿Abrir directamente en modo presentación?
+                  </p>
+                  <code className="truncate text-[10px] text-neutral-400">
+                    …/s/{collection.shareToken}?present=1
+                  </code>
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/s/${collection.shareToken}?present=1`;
+                      navigator.clipboard.writeText(url);
+                    }}
+                    className="shrink-0 rounded bg-neutral-700 px-2 py-1 text-[10px] text-white hover:bg-neutral-600"
+                  >
+                    Copiar
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
