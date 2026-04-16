@@ -106,6 +106,59 @@ export async function uploadToDrive(
 }
 
 /**
+ * Initiate a Drive resumable upload session.
+ *
+ * Returns an opaque upload URL that the browser can PUT the file bytes to
+ * directly, bypassing Vercel's 4.5MB serverless payload limit. The URL is
+ * valid for ~7 days. Drive's resumable protocol supports pause/resume by
+ * querying the URL with Content-Range: bytes *\/{total}.
+ *
+ * Docs: https://developers.google.com/drive/api/guides/manage-uploads#resumable
+ */
+export async function createResumableUploadSession(
+  accessToken: string,
+  file: {
+    name: string;
+    mimeType: string;
+    size: number;
+    folderId: string;
+  }
+): Promise<string> {
+  const response = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Upload-Content-Type": file.mimeType,
+        "X-Upload-Content-Length": String(file.size),
+      },
+      body: JSON.stringify({
+        name: file.name,
+        mimeType: file.mimeType,
+        parents: [file.folderId],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `Failed to create resumable upload session: ${response.status} ${response.statusText} ${body}`
+    );
+  }
+
+  const uploadUrl = response.headers.get("Location");
+  if (!uploadUrl) {
+    throw new Error(
+      "Drive resumable init succeeded but no Location header returned"
+    );
+  }
+  return uploadUrl;
+}
+
+/**
  * Stream a file from Google Drive without buffering.
  * Returns a fetch Response whose body is a ReadableStream.
  * Avoids Vercel's 4.5MB serverless payload limit.

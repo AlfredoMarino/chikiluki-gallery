@@ -34,6 +34,44 @@ export async function allocateSessionSeq(
 }
 
 /**
+ * Allocate N consecutive sequence numbers in a single atomic upsert.
+ *
+ * Returns an array `[start, start+1, …, start+count-1]`. This is the
+ * preferred path for batch uploads (user clicks "Guardar" on 36 photos):
+ * single DB round-trip, guaranteed-consecutive numbers in drop order,
+ * no interleaving with concurrent uploads to the same session.
+ *
+ * Same gap caveat as the single version: if some uploads in the batch fail,
+ * their sequence numbers stay burned.
+ */
+export async function allocateSessionSeqBatch(
+  userId: string,
+  sessionFolder: string,
+  count: number
+): Promise<number[]> {
+  if (!Number.isInteger(count) || count < 1) {
+    throw new Error("allocateSessionSeqBatch: count must be >= 1");
+  }
+
+  const result = await db.execute(sql`
+    INSERT INTO photo_session_counters (user_id, session_folder, next_seq, updated_at)
+    VALUES (${userId}, ${sessionFolder}, ${count + 1}, NOW())
+    ON CONFLICT (user_id, session_folder)
+    DO UPDATE SET
+      next_seq = photo_session_counters.next_seq + ${count},
+      updated_at = NOW()
+    RETURNING next_seq - ${count} AS start
+  `);
+
+  const row = result.rows[0] as { start: number | string } | undefined;
+  if (!row) {
+    throw new Error("allocateSessionSeqBatch: upsert returned no row");
+  }
+  const start = Number(row.start);
+  return Array.from({ length: count }, (_, i) => start + i);
+}
+
+/**
  * Cache the resolved Drive folder IDs on the counter row so that subsequent
  * uploads to the same session skip the ~10-call `ensureSessionFolders` walk.
  *
