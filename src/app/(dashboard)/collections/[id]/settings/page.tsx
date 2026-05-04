@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { LayoutEngine } from "@/components/layouts/layout-engine";
 import { PhotoLightbox } from "@/components/photos/photo-lightbox";
 import {
@@ -143,6 +144,8 @@ export default function CollectionSettingsPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { data: session } = useSession();
+  const userName = session?.user?.name ?? "";
   const [collection, setCollection] = useState<CollectionWithLayout | null>(
     null
   );
@@ -400,7 +403,8 @@ export default function CollectionSettingsPage({
           </div>
 
           {/* Share link */}
-          {collection.visibility !== "private" && (
+          {collection.visibility !== "private" &&
+            (collection.visibility !== "public" || userName) && (
             <div className="rounded-md bg-neutral-800 p-3">
               <p className="mb-1 text-xs text-neutral-400">
                 Link para compartir
@@ -408,14 +412,14 @@ export default function CollectionSettingsPage({
               <div className="flex items-center gap-2">
                 <code className="flex-1 break-all text-xs text-blue-400">
                   {collection.visibility === "public"
-                    ? `${typeof window !== "undefined" ? window.location.origin : ""}/gallery/me/${collection.slug}`
+                    ? `${typeof window !== "undefined" ? window.location.origin : ""}/gallery/${encodeURIComponent(userName)}/${collection.slug}`
                     : `${typeof window !== "undefined" ? window.location.origin : ""}/s/${collection.shareToken}`}
                 </code>
                 <button
                   onClick={() => {
                     const url =
                       collection.visibility === "public"
-                        ? `${window.location.origin}/gallery/me/${collection.slug}`
+                        ? `${window.location.origin}/gallery/${encodeURIComponent(userName)}/${collection.slug}`
                         : `${window.location.origin}/s/${collection.shareToken}`;
                     navigator.clipboard.writeText(url);
                   }}
