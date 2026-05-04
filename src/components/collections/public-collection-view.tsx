@@ -42,12 +42,12 @@ export function PublicCollectionView({
                 Se desactivan al pasar el mouse para no estorbar el hover. */}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 animate-ping rounded-lg bg-white/25 group-hover:hidden"
+              className="pointer-events-none absolute inset-0 animate-ping rounded-lg bg-white/20 group-hover:hidden"
             />
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 animate-ping rounded-lg bg-white/15 group-hover:hidden"
-              style={{ animationDelay: "0.6s" }}
+              className="pointer-events-none absolute inset-0 animate-ping rounded-lg bg-white/10 group-hover:hidden"
+              style={{ animationDelay: "1.5s" }}
             />
             <button
               onClick={() => setPresentationIndex(0)}
