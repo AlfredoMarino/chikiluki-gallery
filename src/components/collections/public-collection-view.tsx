@@ -90,20 +90,33 @@ export function PublicCollectionView({
           <p className="text-sm uppercase tracking-widest text-neutral-500">
             {photos.length} fotos
           </p>
-          <button
-            type="button"
-            autoFocus
-            onClick={() => {
-              setPresentLandingDismissed(true);
-              setPresentationIndex(0);
-            }}
-            className="flex items-center gap-3 rounded-full bg-white px-8 py-4 text-lg font-medium text-black shadow-lg transition hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-            </svg>
-            Comenzar presentación
-          </button>
+          <div className="relative inline-flex">
+            {/* Anillos expansivos detrás del botón: sugieren "tócame".
+                Dos pings desfasados para que siempre haya uno visible. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-white/30"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-white/20"
+              style={{ animationDelay: "0.6s" }}
+            />
+            <button
+              type="button"
+              autoFocus
+              onClick={() => {
+                setPresentLandingDismissed(true);
+                setPresentationIndex(0);
+              }}
+              className="relative flex items-center gap-3 rounded-full bg-white px-8 py-4 text-lg font-medium text-black shadow-[0_0_40px_rgba(255,255,255,0.25)] transition hover:scale-[1.04] active:scale-[0.97]"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+              Comenzar presentación
+            </button>
+          </div>
           <p className="max-w-xs text-xs text-neutral-500">
             Se abrirá en pantalla completa. Pulsa Esc para salir.
           </p>
