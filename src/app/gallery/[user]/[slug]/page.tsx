@@ -34,7 +34,7 @@ export default async function PublicCollectionPage({
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-7xl px-4 py-12">
+    <div className="mx-auto min-h-screen w-full max-w-[1800px] px-2 py-6 sm:px-6 sm:py-12">
       <div className="mb-8">
         <p className="text-sm text-neutral-500">
           <a href={`/gallery/${user}`} className="hover:text-white">
