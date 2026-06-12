@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useLikesOptional } from "@/components/likes/likes-context";
+import { LikeButton } from "@/components/likes/like-button";
 import type { Photo } from "@/types";
 
 interface PhotoItemProps {
@@ -30,6 +32,7 @@ export function PhotoItem({
   rounded = true,
 }: PhotoItemProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const likes = useLikesOptional();
   const [isVisible, setIsVisible] = useState(false);
   const [thumbLoaded, setThumbLoaded] = useState(false);
   const [fullLoaded, setFullLoaded] = useState(false);
@@ -88,7 +91,8 @@ export function PhotoItem({
           src={`/api/drive/image/${photo.id}?size=thumb`}
           alt={photo.originalName}
           onLoad={handleThumbLoad}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+          draggable={false}
+          className={`photo-protect absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
             thumbLoaded ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -100,8 +104,25 @@ export function PhotoItem({
           src={`/api/drive/image/${photo.id}?size=full`}
           alt={photo.originalName}
           onLoad={handleFullLoad}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+          draggable={false}
+          className={`photo-protect absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
             fullLoaded ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
+
+      {/* Like de visitante (solo vistas públicas con LikesProvider).
+          Oculto hasta hover en desktop, pero siempre visible cuando ya está
+          liked para que el visitante vea sus corazones al scrollear. */}
+      {likes && (
+        <LikeButton
+          size="sm"
+          liked={likes.liked.has(photo.id)}
+          onToggle={() => likes.toggle(photo.id)}
+          className={`absolute bottom-2 right-2 z-10 transition-opacity ${
+            likes.liked.has(photo.id)
+              ? "opacity-100"
+              : "opacity-0 group-hover:opacity-100"
           }`}
         />
       )}

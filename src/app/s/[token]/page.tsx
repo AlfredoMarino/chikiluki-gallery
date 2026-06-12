@@ -32,7 +32,7 @@ export default async function SharedCollectionPage({
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[1800px] px-2 py-6 sm:px-6 sm:py-12">
+    <div className="animate-page-in mx-auto min-h-screen w-full max-w-[1800px] px-2 py-6 sm:px-6 sm:py-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">{data.name}</h1>
         {data.description && (
@@ -43,7 +43,11 @@ export default async function SharedCollectionPage({
         </p>
       </div>
 
-      <PublicCollectionView photos={data.photos} layout={data.layout} />
+      <PublicCollectionView
+        collectionId={data.id}
+        photos={data.photos}
+        layout={data.layout}
+      />
     </div>
   );
 }

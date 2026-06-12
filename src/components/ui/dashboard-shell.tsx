@@ -59,7 +59,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       </header>
 
       {/* Main content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-20 pt-4 md:pb-4">
+      <main className="animate-page-in mx-auto w-full max-w-7xl flex-1 px-4 pb-20 pt-4 md:pb-4">
         {children}
       </main>
 

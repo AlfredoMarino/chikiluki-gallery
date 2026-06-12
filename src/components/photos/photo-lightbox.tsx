@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
+import { useLikesOptional } from "@/components/likes/likes-context";
+import { LikeButton } from "@/components/likes/like-button";
 import type { Photo } from "@/types";
 
 interface PhotoLightboxProps {
@@ -17,6 +19,7 @@ export function PhotoLightbox({
   onNavigate,
 }: PhotoLightboxProps) {
   const [showInfo, setShowInfo] = useState(false);
+  const likes = useLikesOptional();
 
   const currentIndex = photos.findIndex((p) => p.id === currentId);
   const photo = currentIndex >= 0 ? photos[currentIndex] : null;
@@ -49,11 +52,14 @@ export function PhotoLightbox({
         case "i":
           setShowInfo((prev) => !prev);
           break;
+        case "l":
+          if (likes && currentId) likes.toggle(currentId);
+          break;
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose, goNext, goPrev]);
+  }, [onClose, goNext, goPrev, likes, currentId]);
 
   // Touch swipe
   useEffect(() => {
@@ -94,6 +100,15 @@ export function PhotoLightbox({
         {currentIndex + 1} / {photos.length}
       </div>
 
+      {/* Like (solo en vistas públicas con LikesProvider) */}
+      {likes && (
+        <LikeButton
+          liked={likes.liked.has(photo.id)}
+          onToggle={() => likes.toggle(photo.id)}
+          className="absolute right-24 top-4 z-10"
+        />
+      )}
+
       {/* Info toggle */}
       <button
         onClick={() => setShowInfo(!showInfo)}
@@ -133,7 +148,8 @@ export function PhotoLightbox({
         key={photo.id}
         src={`/api/drive/image/${photo.id}?size=full`}
         alt={photo.originalName}
-        className="max-h-[90vh] max-w-[90vw] object-contain"
+        draggable={false}
+        className="photo-protect max-h-[90vh] max-w-[90vw] object-contain"
       />
 
       {/* Info panel */}

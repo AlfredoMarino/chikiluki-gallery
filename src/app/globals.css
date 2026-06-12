@@ -26,6 +26,104 @@
       opacity: 0;
     }
   }
+
+  /* Pop del corazón al dar like. */
+  --animate-like-pop: like-pop 0.3s ease-out;
+
+  @keyframes like-pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.25);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* Fade-in suave del contenido de página al navegar. */
+  --animate-page-in: page-in 0.35s ease-out;
+
+  @keyframes page-in {
+    0% {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ─── Scrollbar fina y discreta ─────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #404040 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
+/* ─── Utilidades ─────────────────────────────────────────── */
+
+/* Fotos: sin selección, sin drag-ghost, sin callout de long-press en iOS. */
+.photo-protect {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+/* Shimmer de skeletons: brillo que se desliza sobre el bloque. */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Bloque skeleton con brillo deslizante (usar junto a un tamaño/aspect). */
+.skeleton {
+  background-color: #171717;
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.045) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Accesibilidad: sin movimiento para quien lo pide. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .animate-page-in,
+  .animate-soft-ping,
+  .animate-like-pop,
+  .animate-shimmer {
+    animation: none !important;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

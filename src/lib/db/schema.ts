@@ -260,6 +260,24 @@ export const collectionPhotos = pgTable(
   ]
 );
 
+// Likes anónimos de visitantes en páginas públicas. visitorId viene de una
+// cookie httpOnly (sin FK: no hay cuenta detrás). El PK compuesto impide
+// likes dobles a nivel BD.
+export const photoLikes = pgTable(
+  "photo_likes",
+  {
+    photoId: uuid("photo_id")
+      .notNull()
+      .references(() => photos.id, { onDelete: "cascade" }),
+    visitorId: uuid("visitor_id").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.photoId, table.visitorId] }),
+    index("photo_likes_visitor_idx").on(table.visitorId),
+  ]
+);
+
 export const layoutConfigs = pgTable("layout_configs", {
   id: uuid("id").defaultRandom().primaryKey(),
   collectionId: uuid("collection_id")

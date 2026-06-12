@@ -31,13 +31,16 @@ export async function GET(
     .select({
       photo: photos,
       position: collectionPhotos.position,
+      likeCount: sql<number>`(select count(*) from photo_likes where photo_likes.photo_id = ${photos.id})::int`,
     })
     .from(collectionPhotos)
     .innerJoin(photos, eq(photos.id, collectionPhotos.photoId))
     .where(eq(collectionPhotos.collectionId, id))
     .orderBy(collectionPhotos.position);
 
-  return jsonResponse(result.map((r) => ({ ...r.photo, position: r.position })));
+  return jsonResponse(
+    result.map((r) => ({ ...r.photo, position: r.position, likeCount: r.likeCount }))
+  );
 }
 
 // Add photos to a collection

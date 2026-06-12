@@ -23,7 +23,7 @@ export default async function PublicGalleryPage({
   const collections = await getPublicCollectionsByUser(user);
 
   return (
-    <div className="mx-auto min-h-screen max-w-5xl px-4 py-12">
+    <div className="animate-page-in mx-auto min-h-screen max-w-5xl px-4 py-12">
       <h1 className="text-3xl font-bold">{user}</h1>
       <p className="mt-1 text-neutral-400">
         {collections.length} colecciones publicas

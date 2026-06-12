@@ -5,6 +5,7 @@ import type {
   layoutConfigs,
   collectionPhotos,
   photoTags,
+  photoLikes,
 } from "@/lib/db/schema";
 
 // ─── Inferred types from Drizzle schema ──────────────────
@@ -23,8 +24,14 @@ export type NewLayoutConfig = typeof layoutConfigs.$inferInsert;
 
 export type CollectionPhoto = typeof collectionPhotos.$inferSelect;
 export type PhotoTag = typeof photoTags.$inferSelect;
+export type PhotoLike = typeof photoLikes.$inferSelect;
 
 // ─── API response types ──────────────────────────────────
+
+/** Photo enriquecida con el total de likes (solo en endpoints del dueño). */
+export interface PhotoWithLikeCount extends Photo {
+  likeCount: number;
+}
 
 export interface PhotoWithTags extends Photo {
   tags: (Tag & { source: "manual" | "ai"; confidence: number | null })[];

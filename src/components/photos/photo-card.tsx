@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
-import type { Photo } from "@/types";
+import type { Photo, PhotoWithLikeCount } from "@/types";
 
 interface PhotoCardProps {
   photo: Photo;
@@ -28,6 +28,8 @@ export function PhotoCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isSelected = selectedIds.has(photo.id);
+  // likeCount llega solo desde los endpoints del dueño; 0/undefined → sin badge
+  const likeCount = (photo as PhotoWithLikeCount).likeCount ?? 0;
 
   const handleClick = () => {
     if (isSelecting) {
@@ -69,7 +71,8 @@ export function PhotoCard({
           src={`/api/drive/image/${photo.id}?size=thumb`}
           alt={photo.originalName}
           loading="lazy"
-          className="h-full w-full object-cover transition duration-300"
+          draggable={false}
+          className="photo-protect h-full w-full object-cover transition duration-300"
         />
       </div>
 
@@ -197,6 +200,16 @@ export function PhotoCard({
             )}
           </div>
         </>
+      )}
+
+      {/* Likes de visitantes (solo dueño ve esto) */}
+      {likeCount > 0 && (
+        <div className="absolute bottom-1.5 left-1.5 z-10 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[11px] text-white backdrop-blur-sm">
+          <svg className="h-3 w-3 text-pink-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 8.6c0 5.1-7.3 9.6-9 10.6-1.7-1-9-5.5-9-10.6C3 6 5 4 7.6 4c1.8 0 3.5 1 4.4 2.6C12.9 5 14.6 4 16.4 4 19 4 21 6 21 8.6Z" />
+          </svg>
+          {likeCount}
+        </div>
       )}
 
       {/* Bottom info */}

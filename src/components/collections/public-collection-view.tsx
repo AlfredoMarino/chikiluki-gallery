@@ -5,14 +5,17 @@ import { useSearchParams } from "next/navigation";
 import { LayoutEngine } from "@/components/layouts/layout-engine";
 import { PhotoLightbox } from "@/components/photos/photo-lightbox";
 import { PresentationMode } from "@/components/photos/presentation-mode";
+import { LikesProvider } from "@/components/likes/likes-context";
 import type { Photo, LayoutConfig } from "@/types";
 
 interface PublicCollectionViewProps {
+  collectionId: string;
   photos: Photo[];
   layout: LayoutConfig | null;
 }
 
 export function PublicCollectionView({
+  collectionId,
   photos,
   layout,
 }: PublicCollectionViewProps) {
@@ -32,7 +35,7 @@ export function PublicCollectionView({
     !presentLandingDismissed;
 
   return (
-    <>
+    <LikesProvider collectionId={collectionId}>
       {/* Presentation mode button */}
       {photos.length > 0 && (
         <div className="mb-4 flex justify-end">
@@ -123,6 +126,6 @@ export function PublicCollectionView({
           </p>
         </div>
       )}
-    </>
+    </LikesProvider>
   );
 }

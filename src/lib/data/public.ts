@@ -105,6 +105,50 @@ export async function getPublicCollectionBySlug(
 }
 
 /**
+ * Whether a photo belongs to at least one public/unlisted collection.
+ * Gate used by anonymous endpoints (likes) — same rule the image proxy uses.
+ */
+export async function isPhotoPubliclyAccessible(
+  photoId: string
+): Promise<boolean> {
+  const [row] = await db
+    .select({ photoId: collectionPhotos.photoId })
+    .from(collectionPhotos)
+    .innerJoin(collections, eq(collections.id, collectionPhotos.collectionId))
+    .where(
+      and(
+        eq(collectionPhotos.photoId, photoId),
+        or(
+          eq(collections.visibility, "public"),
+          eq(collections.visibility, "unlisted")
+        )
+      )
+    )
+    .limit(1);
+  return !!row;
+}
+
+/** Whether a collection is public or unlisted (visible via link). */
+export async function isCollectionPubliclyAccessible(
+  collectionId: string
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: collections.id })
+    .from(collections)
+    .where(
+      and(
+        eq(collections.id, collectionId),
+        or(
+          eq(collections.visibility, "public"),
+          eq(collections.visibility, "unlisted")
+        )
+      )
+    )
+    .limit(1);
+  return !!row;
+}
+
+/**
  * Get a collection by share token (for unlisted or public).
  * Used by /s/[token]
  */

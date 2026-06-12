@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
+import { useLikesOptional } from "@/components/likes/likes-context";
+import { LikeButton } from "@/components/likes/like-button";
 import type { Photo } from "@/types";
 
 interface PresentationModeProps {
@@ -26,6 +28,7 @@ export function PresentationMode({
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const prevNeedsRotation = useRef(false);
+  const likes = useLikesOptional();
 
   const photo = photos[index];
   const isLandscapePhoto = photo && photo.width > photo.height;
@@ -203,7 +206,7 @@ export function PresentationMode({
           src={`/api/drive/image/${photo.id}?size=full`}
           alt={photo.originalName}
           onLoad={() => setImageLoaded(true)}
-          className={`max-h-full max-w-full object-contain transition-opacity duration-500 ${
+          className={`photo-protect max-h-full max-w-full object-contain transition-opacity duration-500 ${
             imageLoaded ? "opacity-100" : "opacity-0"
           }`}
           draggable={false}
@@ -259,6 +262,16 @@ export function PresentationMode({
           <div className="pointer-events-none absolute left-3 top-3 z-30 rounded-full bg-black/60 px-3 py-1 text-sm text-white backdrop-blur-sm">
             {index + 1} / {photos.length}
           </div>
+
+          {/* Like (solo vistas públicas con LikesProvider). Vive dentro de los
+              controles auto-ocultables y hereda la rotación del stage. */}
+          {likes && (
+            <LikeButton
+              liked={likes.liked.has(photo.id)}
+              onToggle={() => likes.toggle(photo.id)}
+              className="pointer-events-auto absolute bottom-4 right-4 z-30 !bg-black/60"
+            />
+          )}
 
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-30 h-0.5 bg-white/10">
             <div
