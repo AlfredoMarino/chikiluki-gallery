@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useState, use, useMemo, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { LayoutEngine } from "@/components/layouts/layout-engine";
 import { PhotoLightbox } from "@/components/photos/photo-lightbox";
+import { EditableLayoutCanvas } from "@/components/layouts/editable-layout-canvas";
 import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  rectSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+  LayoutInspector,
+  type Device,
+  type SaveStatus,
+  type LayoutForm,
+} from "@/components/collections/layout-inspector";
 import Link from "next/link";
 import type { Photo, Collection, LayoutConfig } from "@/types";
 
@@ -27,115 +18,11 @@ interface CollectionWithLayout extends Collection {
   layout: LayoutConfig | null;
 }
 
-const layoutOptions = [
-  { value: "grid", label: "Grid", desc: "Cuadricula uniforme", icon: "▦" },
-  { value: "masonry", label: "Masonry", desc: "Alturas variables", icon: "▥" },
-  { value: "list", label: "Lista", desc: "Una por fila", icon: "▤" },
-  { value: "collage", label: "Collage", desc: "Tamaños mixtos", icon: "▧" },
-];
-
-const mobileBehaviorOptions = [
-  { value: "stack", label: "Apilar verticalmente" },
-  { value: "scroll-horizontal", label: "Scroll horizontal" },
-  { value: "rotate-hint", label: "Sugerir rotar" },
-];
-
-const previewModes = [
-  { value: "desktop", label: "Desktop", width: "100%" },
-  { value: "tablet", label: "Tablet", width: "768px" },
-  { value: "mobile", label: "Movil", width: "375px" },
-] as const;
-
-type PreviewMode = (typeof previewModes)[number]["value"];
-
-// --- Sortable thumbnail item for drag-and-drop ---
-function SortablePhotoThumb({
-  photo,
-  span,
-  maxSpan,
-  onChangeSpan,
-}: {
-  photo: Photo;
-  span: number;
-  maxSpan: number;
-  onChangeSpan: (photoId: string, span: number) => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: photo.id });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : undefined,
-    opacity: isDragging ? 0.7 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`group relative overflow-hidden bg-neutral-900 ${
-        isDragging ? "ring-2 ring-white ring-offset-2 ring-offset-black" : ""
-      }`}
-    >
-      {/* Drag handle — the image itself */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing"
-      >
-        <div
-          className="aspect-square bg-neutral-800"
-          style={{
-            backgroundImage: photo.thumbBase64
-              ? `url(${photo.thumbBase64})`
-              : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <img
-            src={`/api/drive/image/${photo.id}?size=thumb`}
-            alt={photo.originalName}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      </div>
-
-      {/* Span controls overlay — bottom */}
-      <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/70 py-1 opacity-0 transition group-hover:opacity-100">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onChangeSpan(photo.id, Math.max(1, span - 1));
-          }}
-          className="flex h-5 w-5 items-center justify-center rounded text-[10px] text-white hover:bg-white/20"
-          title="Reducir tamaño"
-        >
-          −
-        </button>
-        <span className="text-[10px] text-neutral-300">{span}x</span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onChangeSpan(photo.id, Math.min(maxSpan, span + 1));
-          }}
-          className="flex h-5 w-5 items-center justify-center rounded text-[10px] text-white hover:bg-white/20"
-          title="Ampliar tamaño"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
+const deviceWidths: Record<Device, string> = {
+  mobile: "375px",
+  tablet: "768px",
+  desktop: "100%",
+};
 
 export default function CollectionSettingsPage({
   params,
@@ -151,13 +38,20 @@ export default function CollectionSettingsPage({
   );
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [lightboxId, setLightboxId] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+  // Dispositivo simulado: controla el ancho del lienzo Y qué campo de
+  // columnas edita el slider del inspector. En pantallas pequeñas arranca
+  // en móvil. Es estado de UI — cambiarlo no guarda nada.
+  const [device, setDevice] = useState<Device>(() =>
+    typeof window !== "undefined" && window.innerWidth < 640
+      ? "mobile"
+      : "desktop"
+  );
 
   // Layout form state
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<LayoutForm>({
     layoutType: "grid",
     columnsMobile: 2,
     columnsTablet: 3,
@@ -171,10 +65,9 @@ export default function CollectionSettingsPage({
     photoOverrides: {} as Record<string, { span: number; aspect?: string }>,
   });
 
-  // dnd-kit sensors — require 8px movement before starting drag to allow clicks
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
+  // Snapshot del último form persistido — el autosave solo dispara cuando
+  // el form difiere de esto. null = aún no cargó (no guardar nada).
+  const lastSavedForm = useRef<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -184,8 +77,9 @@ export default function CollectionSettingsPage({
       .then(([col, pht]) => {
         setCollection(col);
         setPhotos(pht);
+        let initialForm = null;
         if (col.layout) {
-          setForm({
+          initialForm = {
             layoutType: col.layout.layoutType || "grid",
             columnsMobile: col.layout.columnsMobile ?? 2,
             columnsTablet: col.layout.columnsTablet ?? 3,
@@ -193,110 +87,94 @@ export default function CollectionSettingsPage({
             gap: col.layout.gap ?? 8,
             forceOrientation: col.layout.forceOrientation ?? false,
             mobileBehavior: col.layout.mobileBehavior ?? {
-              landscapeInPortrait: "stack",
+              landscapeInPortrait: "stack" as const,
               maxPhotosPerRow: 1,
             },
             photoOverrides: col.layout.photoOverrides ?? {},
-          });
+          };
+          setForm(initialForm);
+          lastSavedForm.current = JSON.stringify(initialForm);
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        // Colección sin layout: el form por defecto es el punto de partida.
+        if (lastSavedForm.current === null) {
+          setForm((f) => {
+            lastSavedForm.current = JSON.stringify(f);
+            return f;
+          });
+        }
+      });
   }, [id]);
 
-  // Build live LayoutConfig from form state
-  const liveConfig = useMemo(
-    (): LayoutConfig => ({
-      id: collection?.layout?.id || "",
-      collectionId: id,
-      layoutType: form.layoutType,
-      columnsMobile: form.columnsMobile,
-      columnsTablet: form.columnsTablet,
-      columnsDesktop: form.columnsDesktop,
-      gap: form.gap,
-      forceOrientation: form.forceOrientation,
-      mobileBehavior: form.mobileBehavior,
-      photoOverrides: form.photoOverrides,
-    }),
-    [form, id, collection]
-  );
-
-  // Which columns value to use in the preview based on preview mode
-  const previewColumns = useMemo(() => {
-    if (previewMode === "mobile") return form.columnsMobile;
-    if (previewMode === "tablet") return form.columnsTablet;
-    return form.columnsDesktop;
-  }, [previewMode, form.columnsMobile, form.columnsTablet, form.columnsDesktop]);
-
-  // Override the config for the preview to simulate the correct device columns
-  const previewConfig = useMemo((): LayoutConfig => {
-    if (previewMode === "desktop") return liveConfig;
-    // For mobile/tablet preview, override all column counts to match that device
-    return {
-      ...liveConfig,
-      columnsMobile: previewColumns,
-      columnsTablet: previewColumns,
-      columnsDesktop: previewColumns,
-    };
-  }, [liveConfig, previewMode, previewColumns]);
+  // ── Autosave del layout: debounce 800ms cuando el form difiere del
+  // último estado guardado. La carga inicial no dispara PATCH.
+  useEffect(() => {
+    const serialized = JSON.stringify(form);
+    if (lastSavedForm.current === null || lastSavedForm.current === serialized) {
+      return;
+    }
+    setSaveStatus("saving");
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/collections/${id}/layout`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (res.ok) lastSavedForm.current = serialized;
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch {
+        setSaveStatus("idle");
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [form, id]);
 
   const update = useCallback((key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
   }, []);
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
+  // Columnas resueltas para el dispositivo simulado.
+  const resolvedColumns =
+    device === "mobile"
+      ? form.columnsMobile
+      : device === "tablet"
+        ? form.columnsTablet
+        : form.columnsDesktop;
 
-      const oldIndex = photos.findIndex((p) => p.id === active.id);
-      const newIndex = photos.findIndex((p) => p.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const reordered = arrayMove(photos, oldIndex, newIndex);
-      setPhotos(reordered);
-      setSaved(false);
-
-      // Persist order to backend
+  const handleReorder = useCallback(
+    (photoIds: string[]) => {
+      setPhotos((prev) => {
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        return photoIds.map((pid) => byId.get(pid)!).filter(Boolean);
+      });
+      // El orden persiste al instante, igual que antes.
       fetch(`/api/collections/${id}/reorder`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoIds: reordered.map((p) => p.id) }),
+        body: JSON.stringify({ photoIds }),
       });
     },
-    [photos, id]
+    [id]
   );
 
   const handleChangeSpan = useCallback(
     (photoId: string, span: number) => {
-      const newOverrides = { ...form.photoOverrides };
-      if (span <= 1) {
-        delete newOverrides[photoId];
-      } else {
-        newOverrides[photoId] = {
-          ...newOverrides[photoId],
-          span,
-        };
-      }
-      update("photoOverrides", newOverrides);
-    },
-    [form.photoOverrides, update]
-  );
-
-  const handleSaveLayout = async () => {
-    setSaving(true);
-    try {
-      await fetch(`/api/collections/${id}/layout`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      setForm((prev) => {
+        const newOverrides = { ...prev.photoOverrides };
+        if (span <= 1) {
+          delete newOverrides[photoId];
+        } else {
+          newOverrides[photoId] = { ...newOverrides[photoId], span };
+        }
+        return { ...prev, photoOverrides: newOverrides };
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    []
+  );
 
   const handleUpdateCollection = async (field: string, value: unknown) => {
     await fetch(`/api/collections/${id}`, {
@@ -321,9 +199,6 @@ export default function CollectionSettingsPage({
   if (!collection) {
     return <div className="text-neutral-500">Coleccion no encontrada</div>;
   }
-
-  const previewWidth =
-    previewModes.find((m) => m.value === previewMode)?.width || "100%";
 
   return (
     <div className="space-y-8">
@@ -433,7 +308,7 @@ export default function CollectionSettingsPage({
                   para links privados (/s/{token}); en colecciones públicas
                   preferimos no enterrar la galería bajo un modal. */}
               {collection.visibility === "unlisted" && (
-                <div className="mt-2 flex items-center gap-2 border-t border-neutral-700 pt-2">
+                <div className="mt-2 flex items-center gap-2 border-t border-white/10 pt-2">
                   <p className="flex-1 text-[10px] text-neutral-500">
                     ¿Abrir directamente en modo presentación?
                   </p>
@@ -456,275 +331,40 @@ export default function CollectionSettingsPage({
         </div>
       </section>
 
-      {/* Two column layout: controls left, preview right */}
+      {/* Lienzo editable (izquierda) + inspector (derecha) */}
       <div className="flex flex-col gap-6 lg:flex-row">
-        {/* Controls panel */}
-        <div className="w-full space-y-6 lg:w-80 lg:shrink-0">
-          {/* Layout type selector */}
-          <section className="rounded-sm border border-white/10 p-4">
-            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
-              Tipo de layout
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {layoutOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => update("layoutType", opt.value)}
-                  className={`rounded-sm border p-3 text-left transition ${
-                    form.layoutType === opt.value
-                      ? "border-white bg-white/10"
-                      : "border-white/10 hover:border-white/30"
-                  }`}
-                >
-                  <span className="text-lg">{opt.icon}</span>
-                  <p className="mt-1 text-xs font-medium text-white">
-                    {opt.label}
-                  </p>
-                  <p className="text-[10px] text-neutral-400">{opt.desc}</p>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Columns */}
-          <section className="rounded-sm border border-white/10 p-4">
-            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
-              Columnas
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="text-xs text-neutral-400">Movil</label>
-                  <span className="text-xs text-neutral-500">
-                    {form.columnsMobile}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={4}
-                  value={form.columnsMobile}
-                  onChange={(e) =>
-                    update("columnsMobile", parseInt(e.target.value))
-                  }
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="text-xs text-neutral-400">Tablet</label>
-                  <span className="text-xs text-neutral-500">
-                    {form.columnsTablet}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={6}
-                  value={form.columnsTablet}
-                  onChange={(e) =>
-                    update("columnsTablet", parseInt(e.target.value))
-                  }
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="text-xs text-neutral-400">Desktop</label>
-                  <span className="text-xs text-neutral-500">
-                    {form.columnsDesktop}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={8}
-                  value={form.columnsDesktop}
-                  onChange={(e) =>
-                    update("columnsDesktop", parseInt(e.target.value))
-                  }
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Gap */}
-          <section className="rounded-sm border border-white/10 p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">Espacio</h2>
-              <span className="text-xs text-neutral-500">{form.gap}px</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={32}
-              step={2}
-              value={form.gap}
-              onChange={(e) => update("gap", parseInt(e.target.value))}
-              className="mt-2 w-full"
-            />
-          </section>
-
-          {/* Orientation */}
-          <section className="rounded-sm border border-white/10 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-medium text-neutral-300">
-                  Forzar orientacion
-                </h2>
-                <p className="mt-0.5 text-[10px] text-neutral-500">
-                  Fotos landscape se ven mejor en horizontal
-                </p>
-              </div>
-              <button
-                onClick={() =>
-                  update("forceOrientation", !form.forceOrientation)
-                }
-                className={`relative h-6 w-11 rounded-full transition ${
-                  form.forceOrientation ? "bg-white" : "bg-neutral-800"
-                }`}
-              >
-                <span
-                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full transition ${
-                    form.forceOrientation ? "translate-x-5 bg-black" : "bg-white"
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="mt-3">
-              <label className="mb-1 block text-xs text-neutral-400">
-                Landscape en movil portrait
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {mobileBehaviorOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() =>
-                      update("mobileBehavior", {
-                        ...form.mobileBehavior,
-                        landscapeInPortrait: opt.value,
-                      })
-                    }
-                    className={`rounded-sm border px-2 py-1 text-[10px] transition ${
-                      form.mobileBehavior?.landscapeInPortrait === opt.value
-                        ? "border-white bg-white/10 text-white"
-                        : "border-white/10 text-neutral-500 hover:border-white/30"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Save button */}
-          <button
-            onClick={handleSaveLayout}
-            disabled={saving}
-            className={`w-full rounded-sm px-4 py-2.5 text-sm font-medium transition active:scale-[0.98] ${
-              saved
-                ? "bg-neutral-200 text-black"
-                : "bg-white text-black hover:bg-neutral-200"
-            } disabled:opacity-50`}
-          >
-            {saving ? "Guardando..." : saved ? "Guardado ✓" : "Guardar layout"}
-          </button>
-        </div>
-
-        {/* Right panel: preview + reorder */}
-        <div className="flex-1 space-y-6">
-          {/* Live preview */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
-                Vista previa
-              </h2>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-neutral-500">
-                  {photos.length} fotos · {form.layoutType}
-                </span>
-                {/* Device preview toggle */}
-                <div className="flex rounded-sm border border-white/10">
-                  {previewModes.map((mode) => (
-                    <button
-                      key={mode.value}
-                      onClick={() => setPreviewMode(mode.value)}
-                      className={`px-2 py-1 text-[10px] transition ${
-                        previewMode === mode.value
-                          ? "bg-white/10 text-white"
-                          : "text-neutral-500 hover:text-white"
-                      }`}
-                      title={`Vista previa ${mode.label}`}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Preview container — width constrained for device simulation */}
-            <div className="flex justify-center">
-              <div
-                className="w-full rounded-sm border border-white/10 bg-black p-3 transition-all duration-300"
-                style={{ maxWidth: previewWidth }}
-              >
-                {photos.length > 0 ? (
-                  <LayoutEngine
-                    photos={photos}
-                    layout={previewConfig}
-                    onPhotoClick={setLightboxId}
-                    rounded={false}
-                  />
-                ) : (
-                  <div className="flex h-48 items-center justify-center text-sm text-neutral-500">
-                    Agrega fotos a la coleccion para ver el preview
-                  </div>
-                )}
-              </div>
+        {/* Canvas: ES la vista previa y se edita directamente sobre ella */}
+        <div className="min-w-0 flex-1">
+          <div className="flex justify-center">
+            <div
+              className="w-full rounded-sm border border-white/10 bg-black p-3 transition-all duration-300"
+              style={{ maxWidth: deviceWidths[device] }}
+            >
+              <EditableLayoutCanvas
+                photos={photos}
+                layoutType={form.layoutType}
+                columns={resolvedColumns}
+                gap={form.gap}
+                photoOverrides={form.photoOverrides}
+                maxSpan={resolvedColumns}
+                onReorder={handleReorder}
+                onChangeSpan={handleChangeSpan}
+                onOpenLightbox={setLightboxId}
+              />
             </div>
           </div>
+        </div>
 
-          {/* Drag-and-drop reorder + span controls */}
-          {photos.length > 0 && (
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
-                  Orden y tamaño
-                </h2>
-                <p className="text-[10px] text-neutral-500">
-                  Arrastra para reordenar · hover para cambiar tamaño
-                </p>
-              </div>
-              <div className="rounded-sm border border-white/10 bg-black p-3">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={photos.map((p) => p.id)}
-                    strategy={rectSortingStrategy}
-                  >
-                    <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-6">
-                      {photos.map((photo) => (
-                        <SortablePhotoThumb
-                          key={photo.id}
-                          photo={photo}
-                          span={form.photoOverrides[photo.id]?.span || 1}
-                          maxSpan={form.columnsDesktop}
-                          onChangeSpan={handleChangeSpan}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            </div>
-          )}
+        {/* Inspector */}
+        <div className="w-full lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-80 lg:shrink-0 lg:self-start lg:overflow-y-auto">
+          <LayoutInspector
+            form={form}
+            device={device}
+            onDeviceChange={setDevice}
+            update={update}
+            saveStatus={saveStatus}
+            photoCount={photos.length}
+          />
         </div>
       </div>
 
@@ -742,7 +382,7 @@ export default function CollectionSettingsPage({
         </button>
       </section>
 
-      {/* Lightbox for preview */}
+      {/* Lightbox */}
       {lightboxId && (
         <PhotoLightbox
           photos={photos}
