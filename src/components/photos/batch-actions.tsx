@@ -65,7 +65,7 @@ export function BatchActions({ onRefresh }: BatchActionsProps) {
 
   return (
     <div className="fixed bottom-16 left-0 right-0 z-40 px-4 md:bottom-4">
-      <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 shadow-2xl">
+      <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-sm border border-white/10 bg-black/90 px-4 py-3 shadow-2xl backdrop-blur-sm">
         <span className="text-sm text-neutral-300">
           {selectedIds.size} seleccionadas
         </span>
@@ -83,7 +83,7 @@ export function BatchActions({ onRefresh }: BatchActionsProps) {
             + Coleccion
           </button>
           {showAddTo && (
-            <div className="absolute bottom-full right-0 mb-2 w-56 rounded-lg border border-neutral-700 bg-neutral-800 p-2 shadow-xl">
+            <div className="absolute bottom-full right-0 mb-2 w-56 rounded-sm border border-white/10 bg-neutral-950 p-2 shadow-xl">
               {collections.map((col) => (
                 <button
                   key={col.id}
@@ -114,7 +114,7 @@ export function BatchActions({ onRefresh }: BatchActionsProps) {
             Etiquetar
           </button>
           {showTagInput && (
-            <div className="absolute bottom-full right-0 mb-2 flex w-56 gap-2 rounded-lg border border-neutral-700 bg-neutral-800 p-2 shadow-xl">
+            <div className="absolute bottom-full right-0 mb-2 flex w-56 gap-2 rounded-sm border border-white/10 bg-neutral-950 p-2 shadow-xl">
               <input
                 autoFocus
                 value={tagInput}
@@ -125,7 +125,7 @@ export function BatchActions({ onRefresh }: BatchActionsProps) {
               />
               <button
                 onClick={handleTagSelected}
-                className="rounded bg-blue-600 px-2 py-1 text-xs text-white"
+                className="rounded-sm bg-white px-2 py-1 text-xs text-black transition hover:bg-neutral-200"
               >
                 OK
               </button>
@@ -136,7 +136,7 @@ export function BatchActions({ onRefresh }: BatchActionsProps) {
         {/* Delete */}
         <button
           onClick={handleDeleteSelected}
-          className="rounded-md bg-red-900/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900"
+          className="rounded-sm border border-red-900/60 px-3 py-1.5 text-xs text-red-400/90 transition hover:border-red-700 hover:text-red-300"
         >
           Eliminar
         </button>

@@ -57,9 +57,9 @@ export function AddToCollectionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-xl border border-neutral-700 bg-neutral-900 shadow-2xl">
+      <div className="w-full max-w-md rounded-sm border border-white/10 bg-neutral-950 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <h2 className="text-sm font-medium text-white">
             Agregar {photoIds.length} foto{photoIds.length > 1 ? "s" : ""} a...
           </h2>
@@ -87,7 +87,7 @@ export function AddToCollectionModal({
                 <button
                   key={col.id}
                   onClick={() => handleAdd(col.id)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-neutral-800"
+                  className="flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-left transition hover:bg-white/10"
                 >
                   <span className="text-lg">{typeIcons[col.type]}</span>
                   <div className="flex-1 min-w-0">
@@ -108,7 +108,7 @@ export function AddToCollectionModal({
         </div>
 
         {/* Create new */}
-        <div className="border-t border-neutral-800 p-3">
+        <div className="border-t border-white/10 p-3">
           {creating ? (
             <div className="space-y-2">
               <input
@@ -117,13 +117,13 @@ export function AddToCollectionModal({
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 placeholder="Nombre de la coleccion"
-                className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
+                className="w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-white/40"
               />
               <div className="flex gap-2">
                 <select
                   value={newType}
                   onChange={(e) => setNewType(e.target.value)}
-                  className="rounded-md bg-neutral-800 px-2 py-1.5 text-sm text-white outline-none"
+                  className="rounded-sm border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none transition focus:border-white/40"
                 >
                   <option value="album">Album</option>
                   <option value="roll">Rollo</option>
@@ -131,7 +131,7 @@ export function AddToCollectionModal({
                 </select>
                 <button
                   onClick={handleCreate}
-                  className="flex-1 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+                  className="flex-1 rounded-sm bg-white px-3 py-1.5 text-sm font-medium text-black transition hover:bg-neutral-200"
                 >
                   Crear y agregar
                 </button>
@@ -146,7 +146,7 @@ export function AddToCollectionModal({
           ) : (
             <button
               onClick={() => setCreating(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-600 px-3 py-2.5 text-sm text-neutral-400 transition hover:border-neutral-400 hover:text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-white/15 px-3 py-2.5 text-sm text-neutral-400 transition hover:border-white/40 hover:text-white"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

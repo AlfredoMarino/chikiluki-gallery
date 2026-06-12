@@ -20,22 +20,25 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-950 text-white">
+    <div className="flex min-h-screen flex-col bg-black text-white">
       {/* Top bar (desktop) */}
-      <header className="hidden border-b border-neutral-800 md:block">
+      <header className="hidden border-b border-white/10 md:block">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <Link href="/photos" className="text-lg font-bold tracking-tight">
+          <Link
+            href="/photos"
+            className="text-sm font-light uppercase tracking-[0.2em]"
+          >
             Chikiluki Gallery
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-md px-3 py-2 text-sm transition ${
+                className={`text-[13px] uppercase tracking-[0.1em] transition ${
                   pathname.startsWith(item.href)
-                    ? "bg-neutral-800 text-white"
-                    : "text-neutral-400 hover:text-white"
+                    ? "text-white"
+                    : "text-neutral-500 hover:text-neutral-300"
                 }`}
               >
                 {item.label}
@@ -44,7 +47,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           </nav>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-neutral-400 transition hover:text-white"
+            className="flex items-center gap-2 px-3 py-2 text-[13px] text-neutral-500 transition hover:text-white"
           >
             {user.image && (
               <img
@@ -64,7 +67,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-800 bg-neutral-950/95 backdrop-blur-sm md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/90 backdrop-blur-sm md:hidden">
         <div className="flex items-center justify-around py-2">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href);

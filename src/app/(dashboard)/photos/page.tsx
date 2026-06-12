@@ -108,13 +108,10 @@ export default function PhotosPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Mis fotos</h1>
+        <h1 className="text-2xl font-light tracking-tight">Mis fotos</h1>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square animate-pulse rounded-lg bg-neutral-800"
-            />
+            <div key={i} className="skeleton aspect-square" />
           ))}
         </div>
       </div>
@@ -124,10 +121,10 @@ export default function PhotosPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Mis fotos</h1>
+        <h1 className="text-2xl font-light tracking-tight">Mis fotos</h1>
         <Link
           href="/upload"
-          className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
+          className="rounded-sm bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
         >
           Subir fotos
         </Link>
@@ -135,16 +132,16 @@ export default function PhotosPage() {
 
       {/* Toolbar: view toggle + filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex overflow-hidden rounded-lg border border-neutral-800">
+        <div className="inline-flex overflow-hidden rounded-sm border border-white/10">
           {(["session", "all"] as const).map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`px-3 py-1.5 text-xs font-medium transition ${
+              className={`px-3 py-1.5 text-xs transition ${
                 view === v
-                  ? "bg-white text-black"
-                  : "bg-black text-neutral-400 hover:text-white"
+                  ? "bg-white/10 text-white"
+                  : "bg-black text-neutral-500 hover:text-neutral-300"
               }`}
             >
               {v === "session" ? "Por sesión" : "Todas"}
@@ -156,7 +153,7 @@ export default function PhotosPage() {
           <select
             value={cameraFilter}
             onChange={(e) => setCameraFilter(e.target.value)}
-            className="rounded-md border border-neutral-800 bg-black px-2 py-1 text-xs text-white"
+            className="rounded-sm border border-white/10 bg-black px-2 py-1 text-xs text-white outline-none transition focus:border-white/40"
           >
             <option value="">Todas las cámaras</option>
             {cameras.map((c) => (
@@ -171,7 +168,7 @@ export default function PhotosPage() {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
-            className="rounded-md border border-neutral-800 bg-black px-2 py-1 text-xs text-white"
+            className="rounded-sm border border-white/10 bg-black px-2 py-1 text-xs text-white outline-none transition focus:border-white/40"
           >
             <option value="">Todos los años</option>
             {years.map((y) => (
@@ -205,7 +202,7 @@ export default function PhotosPage() {
 
             return (
               <section key={group.sessionFolder} className="space-y-3">
-                <h2 className="font-mono text-sm text-neutral-300">
+                <h2 className="border-b border-white/10 pb-2 font-mono text-[11px] tracking-wide text-neutral-400">
                   {group.sessionFolder}{" "}
                   <span className="text-neutral-600">
                     · {group.photos.length}

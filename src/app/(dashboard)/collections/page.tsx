@@ -59,10 +59,10 @@ export default function CollectionsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Colecciones</h1>
+        <h1 className="text-2xl font-light tracking-tight">Colecciones</h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
+          className="rounded-sm bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
         >
           Nueva coleccion
         </button>
@@ -72,7 +72,7 @@ export default function CollectionsPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="flex flex-wrap items-end gap-3 rounded-lg bg-neutral-900 p-4"
+          className="flex flex-wrap items-end gap-3 rounded-sm border border-white/10 p-4"
         >
           <div className="flex-1">
             <label className="mb-1 block text-xs text-neutral-400">
@@ -82,14 +82,14 @@ export default function CollectionsPage() {
               name="name"
               required
               placeholder="Ej: Fujifilm 100 - Rollo 1"
-              className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white placeholder-neutral-500 outline-none focus:ring-1 focus:ring-neutral-600"
+              className="w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-white/40"
             />
           </div>
           <div>
             <label className="mb-1 block text-xs text-neutral-400">Tipo</label>
             <select
               name="type"
-              className="rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none"
+              className="rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-white/40"
             >
               <option value="album">Album</option>
               <option value="roll">Rollo</option>
@@ -98,7 +98,7 @@ export default function CollectionsPage() {
           </div>
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            className="rounded-sm bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
             Crear
           </button>
@@ -118,7 +118,7 @@ export default function CollectionsPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 animate-pulse rounded-lg bg-neutral-800"
+              className="skeleton h-24 rounded-sm"
             />
           ))}
         </div>
@@ -135,13 +135,11 @@ export default function CollectionsPage() {
             <Link
               key={col.id}
               href={`/collections/${col.id}`}
-              className="group rounded-lg border border-neutral-800 bg-neutral-900 p-4 transition hover:border-neutral-700"
+              className="group rounded-sm border border-white/10 p-4 transition hover:border-white/30"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-medium text-white group-hover:text-blue-400">
-                    {col.name}
-                  </h3>
+                  <h3 className="font-light text-white">{col.name}</h3>
                   <p className="mt-1 text-xs text-neutral-500">
                     {typeLabels[col.type]} · {col.photoCount} fotos
                   </p>

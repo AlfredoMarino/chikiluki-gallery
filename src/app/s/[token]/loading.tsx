@@ -2,10 +2,10 @@ export default function Loading() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1800px] px-2 py-6 sm:px-6 sm:py-12">
       {/* Header skeleton — replica el header real de la colección */}
-      <div className="mb-8 space-y-3">
-        <div className="skeleton h-9 w-72 max-w-full rounded-md" />
-        <div className="skeleton h-4 w-48 rounded-md" />
-        <div className="skeleton h-4 w-24 rounded-md" />
+      <div className="mb-10 space-y-4 border-b border-white/10 pb-8">
+        <div className="skeleton h-11 w-80 max-w-full rounded-sm" />
+        <div className="skeleton h-4 w-56 rounded-sm" />
+        <div className="skeleton h-3 w-20 rounded-sm" />
       </div>
 
       {/* Grid skeleton */}

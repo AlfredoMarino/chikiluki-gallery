@@ -46,13 +46,13 @@ export function PhotoGrid({
     <div className="space-y-3">
       {/* Selection toolbar */}
       {isSelecting && (
-        <div className="flex items-center gap-3 rounded-lg bg-neutral-900 px-4 py-2">
+        <div className="flex items-center gap-3 rounded-sm border border-white/10 px-4 py-2">
           <span className="text-sm text-neutral-300">
             {selectedIds.size} seleccionadas
           </span>
           <button
             onClick={() => selectAll(photos.map((p) => p.id))}
-            className="text-sm text-blue-400 hover:text-blue-300"
+            className="text-sm text-neutral-400 underline-offset-4 transition hover:text-white hover:underline"
           >
             Todas
           </button>

@@ -9,20 +9,20 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/photos";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-black px-4">
       <div className="w-full max-w-sm space-y-8 text-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl font-extralight tracking-tight text-white">
             Chikiluki Gallery
           </h1>
-          <p className="mt-2 text-sm text-neutral-400">
+          <p className="mt-3 text-[13px] font-light text-neutral-400">
             Gestiona, organiza y comparte tus fotografías
           </p>
         </div>
 
         <button
           onClick={() => signIn("google", { callbackUrl })}
-          className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-3 rounded-sm bg-white px-4 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100 active:scale-[0.98]"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -45,7 +45,7 @@ function LoginForm() {
           Continuar con Google
         </button>
 
-        <p className="text-xs text-neutral-500">
+        <p className="text-[11px] text-neutral-600">
           Al iniciar sesión, se solicitará acceso a Google Drive para almacenar
           tus fotos en una carpeta dedicada.
         </p>

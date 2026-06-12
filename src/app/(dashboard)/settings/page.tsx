@@ -7,10 +7,10 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Ajustes</h1>
+      <h1 className="text-2xl font-light tracking-tight">Ajustes</h1>
 
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-        <h2 className="text-sm font-medium text-neutral-300">Cuenta</h2>
+      <div className="rounded-sm border border-white/10 p-4">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">Cuenta</h2>
         <div className="mt-3 flex items-center gap-3">
           {session?.user?.image && (
             <img
@@ -26,8 +26,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-        <h2 className="text-sm font-medium text-neutral-300">Google Drive</h2>
+      <div className="rounded-sm border border-white/10 p-4">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">Google Drive</h2>
         <p className="mt-2 text-xs text-neutral-500">
           Tus fotos se almacenan en la carpeta &quot;Chikiluki Gallery&quot; de
           tu Google Drive. Solo la app puede acceder a esa carpeta.
@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="rounded-lg border border-red-900 px-4 py-2 text-sm text-red-400 transition hover:bg-red-950"
+        className="rounded-sm border border-red-900/60 px-4 py-2 text-sm text-red-400/90 transition hover:border-red-700 hover:text-red-300"
       >
         Cerrar sesion
       </button>

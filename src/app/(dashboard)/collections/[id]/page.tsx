@@ -70,10 +70,10 @@ export default function CollectionDetailPage({
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded bg-neutral-800" />
+        <div className="skeleton h-8 w-48 rounded-sm" />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="aspect-square animate-pulse rounded-lg bg-neutral-800" />
+            <div key={i} className="skeleton aspect-square" />
           ))}
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function CollectionDetailPage({
         </Link>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{collection.name}</h1>
+            <h1 className="text-2xl font-light tracking-tight">{collection.name}</h1>
             <p className="text-sm text-neutral-500">
               {typeLabels[collection.type]} · {photos.length} fotos · {collection.visibility}
             </p>
@@ -108,7 +108,7 @@ export default function CollectionDetailPage({
             {photos.length > 0 && (
               <button
                 onClick={() => setPresentationIndex(0)}
-                className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white"
+                className="rounded-sm border border-white/15 px-3 py-2 text-sm text-neutral-300 transition hover:border-white/40 hover:text-white"
                 title="Modo presentacion"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -118,18 +118,18 @@ export default function CollectionDetailPage({
             )}
             <button
               onClick={() => setShowPicker(true)}
-              className="rounded-lg bg-white px-3 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
+              className="rounded-sm bg-white px-3 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
             >
               + Agregar fotos
             </button>
             {/* View toggle */}
-            <div className="flex rounded-lg border border-neutral-700">
+            <div className="flex rounded-sm border border-white/10">
               <button
                 onClick={() => setViewMode("layout")}
                 className={`px-3 py-2 text-xs transition ${
                   viewMode === "layout"
-                    ? "bg-neutral-700 text-white"
-                    : "text-neutral-400 hover:text-white"
+                    ? "bg-white/10 text-white"
+                    : "text-neutral-500 hover:text-white"
                 }`}
               >
                 Vista
@@ -138,8 +138,8 @@ export default function CollectionDetailPage({
                 onClick={() => setViewMode("manage")}
                 className={`px-3 py-2 text-xs transition ${
                   viewMode === "manage"
-                    ? "bg-neutral-700 text-white"
-                    : "text-neutral-400 hover:text-white"
+                    ? "bg-white/10 text-white"
+                    : "text-neutral-500 hover:text-white"
                 }`}
               >
                 Gestionar
@@ -147,7 +147,7 @@ export default function CollectionDetailPage({
             </div>
             <Link
               href={`/collections/${id}/settings`}
-              className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white"
+              className="rounded-sm border border-white/15 px-3 py-2 text-sm text-neutral-300 transition hover:border-white/40 hover:text-white"
             >
               Configurar
             </Link>

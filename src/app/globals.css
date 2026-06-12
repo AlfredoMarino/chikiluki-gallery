@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
+/* Galería de arte: negro puro siempre — sin modo claro. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -61,7 +62,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #404040 transparent;
+  scrollbar-color: #333333 transparent;
 }
 
 ::-webkit-scrollbar {
@@ -74,12 +75,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: #333333;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #525252;
+  background: #444444;
 }
 
 /* ─── Utilidades ─────────────────────────────────────────── */
@@ -104,7 +105,7 @@
 
 /* Bloque skeleton con brillo deslizante (usar junto a un tamaño/aspect). */
 .skeleton {
-  background-color: #171717;
+  background-color: #0f0f0f;
   background-image: linear-gradient(
     100deg,
     transparent 30%,
@@ -126,15 +127,13 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Los sliders nativos se ven azules en Chromium sin esto. */
+input[type="range"] {
+  accent-color: #ffffff;
 }

@@ -81,7 +81,7 @@ function SortablePhotoThumb({
       ref={setNodeRef}
       style={style}
       className={`group relative overflow-hidden bg-neutral-900 ${
-        isDragging ? "ring-2 ring-blue-500" : ""
+        isDragging ? "ring-2 ring-white ring-offset-2 ring-offset-black" : ""
       }`}
     >
       {/* Drag handle — the image itself */}
@@ -315,7 +315,7 @@ export default function CollectionSettingsPage({
   };
 
   if (loading) {
-    return <div className="h-96 animate-pulse rounded-lg bg-neutral-800" />;
+    return <div className="skeleton h-96 rounded-sm" />;
   }
 
   if (!collection) {
@@ -335,12 +335,12 @@ export default function CollectionSettingsPage({
         >
           &larr; {collection.name}
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Configuracion</h1>
+        <h1 className="mt-2 text-2xl font-light tracking-tight">Configuracion</h1>
       </div>
 
       {/* Collection details */}
-      <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-        <h2 className="mb-3 text-sm font-medium text-neutral-300">
+      <section className="rounded-sm border border-white/10 p-4">
+        <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
           Detalles de la coleccion
         </h2>
         <div className="space-y-3">
@@ -351,7 +351,7 @@ export default function CollectionSettingsPage({
             <input
               defaultValue={collection.name}
               onBlur={(e) => handleUpdateCollection("name", e.target.value)}
-              className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-neutral-600"
+              className="w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-white/40"
             />
           </div>
           <div>
@@ -364,7 +364,7 @@ export default function CollectionSettingsPage({
                 handleUpdateCollection("description", e.target.value)
               }
               rows={2}
-              className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-neutral-600"
+              className="w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-white/40"
             />
           </div>
           <div className="flex gap-4">
@@ -377,7 +377,7 @@ export default function CollectionSettingsPage({
                 onChange={(e) =>
                   handleUpdateCollection("visibility", e.target.value)
                 }
-                className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none"
+                className="w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-white/40"
               >
                 <option value="private">Privada</option>
                 <option value="public">Publica</option>
@@ -393,7 +393,7 @@ export default function CollectionSettingsPage({
                 onChange={(e) =>
                   handleUpdateCollection("type", e.target.value)
                 }
-                className="w-full rounded-md bg-neutral-800 px-3 py-2 text-sm text-white outline-none"
+                className="w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-white/40"
               >
                 <option value="album">Album</option>
                 <option value="roll">Rollo</option>
@@ -405,12 +405,12 @@ export default function CollectionSettingsPage({
           {/* Share link */}
           {collection.visibility !== "private" &&
             (collection.visibility !== "public" || userName) && (
-            <div className="rounded-md bg-neutral-800 p-3">
+            <div className="rounded-sm border border-white/10 bg-white/[0.03] p-3">
               <p className="mb-1 text-xs text-neutral-400">
                 Link para compartir
               </p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 break-all text-xs text-blue-400">
+                <code className="flex-1 break-all text-xs text-neutral-300">
                   {collection.visibility === "public"
                     ? `${typeof window !== "undefined" ? window.location.origin : ""}/gallery/${encodeURIComponent(userName)}/${collection.slug}`
                     : `${typeof window !== "undefined" ? window.location.origin : ""}/s/${collection.shareToken}`}
@@ -423,7 +423,7 @@ export default function CollectionSettingsPage({
                         : `${window.location.origin}/s/${collection.shareToken}`;
                     navigator.clipboard.writeText(url);
                   }}
-                  className="shrink-0 rounded bg-neutral-700 px-2 py-1 text-xs text-white hover:bg-neutral-600"
+                  className="shrink-0 rounded-sm border border-white/15 px-2 py-1 text-xs text-neutral-300 transition hover:border-white/40 hover:text-white"
                 >
                   Copiar
                 </button>
@@ -445,7 +445,7 @@ export default function CollectionSettingsPage({
                       const url = `${window.location.origin}/s/${collection.shareToken}?present=1`;
                       navigator.clipboard.writeText(url);
                     }}
-                    className="shrink-0 rounded bg-neutral-700 px-2 py-1 text-[10px] text-white hover:bg-neutral-600"
+                    className="shrink-0 rounded-sm border border-white/15 px-2 py-1 text-[10px] text-neutral-300 transition hover:border-white/40 hover:text-white"
                   >
                     Copiar
                   </button>
@@ -461,8 +461,8 @@ export default function CollectionSettingsPage({
         {/* Controls panel */}
         <div className="w-full space-y-6 lg:w-80 lg:shrink-0">
           {/* Layout type selector */}
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-            <h2 className="mb-3 text-sm font-medium text-neutral-300">
+          <section className="rounded-sm border border-white/10 p-4">
+            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
               Tipo de layout
             </h2>
             <div className="grid grid-cols-2 gap-2">
@@ -470,10 +470,10 @@ export default function CollectionSettingsPage({
                 <button
                   key={opt.value}
                   onClick={() => update("layoutType", opt.value)}
-                  className={`rounded-lg border p-3 text-left transition ${
+                  className={`rounded-sm border p-3 text-left transition ${
                     form.layoutType === opt.value
-                      ? "border-blue-500 bg-blue-950/50"
-                      : "border-neutral-700 hover:border-neutral-500"
+                      ? "border-white bg-white/10"
+                      : "border-white/10 hover:border-white/30"
                   }`}
                 >
                   <span className="text-lg">{opt.icon}</span>
@@ -487,8 +487,8 @@ export default function CollectionSettingsPage({
           </section>
 
           {/* Columns */}
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-            <h2 className="mb-3 text-sm font-medium text-neutral-300">
+          <section className="rounded-sm border border-white/10 p-4">
+            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
               Columnas
             </h2>
             <div className="space-y-3">
@@ -550,9 +550,9 @@ export default function CollectionSettingsPage({
           </section>
 
           {/* Gap */}
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+          <section className="rounded-sm border border-white/10 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium text-neutral-300">Espacio</h2>
+              <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">Espacio</h2>
               <span className="text-xs text-neutral-500">{form.gap}px</span>
             </div>
             <input
@@ -567,7 +567,7 @@ export default function CollectionSettingsPage({
           </section>
 
           {/* Orientation */}
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+          <section className="rounded-sm border border-white/10 p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-medium text-neutral-300">
@@ -582,12 +582,12 @@ export default function CollectionSettingsPage({
                   update("forceOrientation", !form.forceOrientation)
                 }
                 className={`relative h-6 w-11 rounded-full transition ${
-                  form.forceOrientation ? "bg-blue-600" : "bg-neutral-700"
+                  form.forceOrientation ? "bg-white" : "bg-neutral-800"
                 }`}
               >
                 <span
-                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition ${
-                    form.forceOrientation ? "translate-x-5" : ""
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full transition ${
+                    form.forceOrientation ? "translate-x-5 bg-black" : "bg-white"
                   }`}
                 />
               </button>
@@ -607,10 +607,10 @@ export default function CollectionSettingsPage({
                         landscapeInPortrait: opt.value,
                       })
                     }
-                    className={`rounded-md border px-2 py-1 text-[10px] transition ${
+                    className={`rounded-sm border px-2 py-1 text-[10px] transition ${
                       form.mobileBehavior?.landscapeInPortrait === opt.value
-                        ? "border-blue-500 bg-blue-950/50 text-white"
-                        : "border-neutral-700 text-neutral-400"
+                        ? "border-white bg-white/10 text-white"
+                        : "border-white/10 text-neutral-500 hover:border-white/30"
                     }`}
                   >
                     {opt.label}
@@ -624,10 +624,10 @@ export default function CollectionSettingsPage({
           <button
             onClick={handleSaveLayout}
             disabled={saving}
-            className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium transition active:scale-[0.98] ${
+            className={`w-full rounded-sm px-4 py-2.5 text-sm font-medium transition active:scale-[0.98] ${
               saved
-                ? "bg-green-600 text-white"
-                : "bg-blue-600 text-white hover:bg-blue-500"
+                ? "bg-neutral-200 text-black"
+                : "bg-white text-black hover:bg-neutral-200"
             } disabled:opacity-50`}
           >
             {saving ? "Guardando..." : saved ? "Guardado ✓" : "Guardar layout"}
@@ -639,7 +639,7 @@ export default function CollectionSettingsPage({
           {/* Live preview */}
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-medium text-neutral-300">
+              <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
                 Vista previa
               </h2>
               <div className="flex items-center gap-3">
@@ -647,15 +647,15 @@ export default function CollectionSettingsPage({
                   {photos.length} fotos · {form.layoutType}
                 </span>
                 {/* Device preview toggle */}
-                <div className="flex rounded-md border border-neutral-700">
+                <div className="flex rounded-sm border border-white/10">
                   {previewModes.map((mode) => (
                     <button
                       key={mode.value}
                       onClick={() => setPreviewMode(mode.value)}
                       className={`px-2 py-1 text-[10px] transition ${
                         previewMode === mode.value
-                          ? "bg-neutral-700 text-white"
-                          : "text-neutral-400 hover:text-white"
+                          ? "bg-white/10 text-white"
+                          : "text-neutral-500 hover:text-white"
                       }`}
                       title={`Vista previa ${mode.label}`}
                     >
@@ -669,7 +669,7 @@ export default function CollectionSettingsPage({
             {/* Preview container — width constrained for device simulation */}
             <div className="flex justify-center">
               <div
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 transition-all duration-300"
+                className="w-full rounded-sm border border-white/10 bg-black p-3 transition-all duration-300"
                 style={{ maxWidth: previewWidth }}
               >
                 {photos.length > 0 ? (
@@ -692,14 +692,14 @@ export default function CollectionSettingsPage({
           {photos.length > 0 && (
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-medium text-neutral-300">
+                <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
                   Orden y tamaño
                 </h2>
                 <p className="text-[10px] text-neutral-500">
                   Arrastra para reordenar · hover para cambiar tamaño
                 </p>
               </div>
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-3">
+              <div className="rounded-sm border border-white/10 bg-black p-3">
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -729,14 +729,14 @@ export default function CollectionSettingsPage({
       </div>
 
       {/* Danger zone */}
-      <section className="rounded-lg border border-red-900/50 bg-neutral-900 p-4">
-        <h2 className="text-sm font-medium text-red-400">Zona peligrosa</h2>
+      <section className="rounded-sm border border-red-900/50 p-4">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-red-400/90">Zona peligrosa</h2>
         <p className="mt-1 text-xs text-neutral-400">
           Eliminar la coleccion no borra las fotos, solo la agrupacion.
         </p>
         <button
           onClick={handleDelete}
-          className="mt-3 rounded-md border border-red-800 px-4 py-2 text-sm text-red-400 transition hover:bg-red-950"
+          className="mt-3 rounded-sm border border-red-900/60 px-4 py-2 text-sm text-red-400/90 transition hover:border-red-700 hover:text-red-300"
         >
           Eliminar coleccion
         </button>

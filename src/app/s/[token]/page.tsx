@@ -33,12 +33,16 @@ export default async function SharedCollectionPage({
 
   return (
     <div className="animate-page-in mx-auto min-h-screen w-full max-w-[1800px] px-2 py-6 sm:px-6 sm:py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">{data.name}</h1>
+      <div className="mb-10 border-b border-white/10 pb-8">
+        <h1 className="text-4xl font-extralight tracking-tight sm:text-5xl">
+          {data.name}
+        </h1>
         {data.description && (
-          <p className="mt-2 text-neutral-400">{data.description}</p>
+          <p className="mt-3 max-w-2xl text-sm font-light leading-relaxed text-neutral-400">
+            {data.description}
+          </p>
         )}
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-4 text-[11px] uppercase tracking-[0.15em] text-neutral-500">
           {data.photos.length} fotos
         </p>
       </div>

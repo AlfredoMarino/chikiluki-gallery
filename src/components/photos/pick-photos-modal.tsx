@@ -43,9 +43,9 @@ export function PickPhotosModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[80vh] w-full max-w-3xl flex-col rounded-xl border border-neutral-700 bg-neutral-900 shadow-2xl">
+      <div className="flex max-h-[80vh] w-full max-w-3xl flex-col rounded-sm border border-white/10 bg-neutral-950 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <h2 className="text-sm font-medium text-white">
             Agregar fotos a la coleccion
           </h2>
@@ -61,7 +61,7 @@ export function PickPhotosModal({
           {loading ? (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
               {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="aspect-square animate-pulse rounded-lg bg-neutral-800" />
+                <div key={i} className="skeleton aspect-square" />
               ))}
             </div>
           ) : available.length === 0 ? (
@@ -76,8 +76,10 @@ export function PickPhotosModal({
                   <div
                     key={photo.id}
                     onClick={() => togglePhoto(photo.id)}
-                    className={`relative cursor-pointer overflow-hidden rounded-lg transition ${
-                      isSelected ? "ring-2 ring-blue-500" : "hover:opacity-80"
+                    className={`relative cursor-pointer overflow-hidden transition ${
+                      isSelected
+                        ? "ring-2 ring-white ring-offset-2 ring-offset-black"
+                        : "hover:opacity-80"
                     }`}
                   >
                     <div
@@ -97,8 +99,8 @@ export function PickPhotosModal({
                       />
                     </div>
                     {isSelected && (
-                      <div className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
-                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                      <div className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white">
+                        <svg className="h-3 w-3 text-black" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
                       </div>
@@ -111,7 +113,7 @@ export function PickPhotosModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-neutral-800 px-4 py-3">
+        <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
           <span className="text-sm text-neutral-400">
             {selected.size} seleccionadas
           </span>
@@ -125,7 +127,7 @@ export function PickPhotosModal({
             <button
               onClick={() => onAdd(Array.from(selected))}
               disabled={selected.size === 0}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500 disabled:opacity-40"
+              className="rounded-sm bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200 disabled:opacity-40"
             >
               Agregar {selected.size > 0 ? `(${selected.size})` : ""}
             </button>

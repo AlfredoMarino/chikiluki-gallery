@@ -10,17 +10,20 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-950 px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4">
       <div className="space-y-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+        <p className="text-[11px] uppercase tracking-[0.3em] text-neutral-500">
+          Galería fotográfica
+        </p>
+        <h1 className="text-5xl font-extralight tracking-tight text-white sm:text-6xl">
           Chikiluki Gallery
         </h1>
-        <p className="mx-auto max-w-md text-lg text-neutral-400">
+        <p className="mx-auto max-w-md text-base font-light text-neutral-400">
           Gestiona, organiza y comparte tus fotografías analógicas y digitales.
         </p>
         <Link
           href="/login"
-          className="inline-flex rounded-lg bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-neutral-200 active:scale-[0.98]"
+          className="inline-flex rounded-sm border border-white/20 px-8 py-3 text-[13px] uppercase tracking-[0.15em] text-white transition hover:bg-white hover:text-black"
         >
           Iniciar sesión
         </Link>

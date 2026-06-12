@@ -545,9 +545,9 @@ export function PhotoUploader({
   return (
     <div className="space-y-6">
       {/* ─── Metadata form ──────────────────────────── */}
-      <div className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+      <div className="space-y-4 rounded-sm border border-white/10 p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-200">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-500">
             Metadatos de la sesión
           </h2>
           <button
@@ -566,10 +566,10 @@ export function PhotoUploader({
               key={m}
               type="button"
               onClick={() => setForm((f) => ({ ...f, medium: m }))}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+              className={`flex-1 rounded-sm border px-3 py-2 text-sm font-medium transition ${
                 form.medium === m
                   ? "border-white bg-white text-black"
-                  : "border-neutral-700 text-neutral-300 hover:border-neutral-500"
+                  : "border-white/15 text-neutral-300 hover:border-white/40"
               }`}
             >
               {m === "digital" ? "Digital" : "Film"}
@@ -678,7 +678,7 @@ export function PhotoUploader({
         )}
 
         {/* Live preview + existing-session hint */}
-        <div className="space-y-2 rounded-lg border border-neutral-800 bg-black px-3 py-2 text-xs">
+        <div className="space-y-2 rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
           {sessionPreview.ok ? (
             <>
               <div>
@@ -688,7 +688,7 @@ export function PhotoUploader({
                 </span>
               </div>
               {sessionInfo?.exists && (
-                <div className="text-amber-400">
+                <div className="text-neutral-300">
                   Sesión existente — {sessionInfo.uploadedCount} fotos
                   subidas. Las nuevas seguirán en{" "}
                   <span className="font-mono">
@@ -699,7 +699,7 @@ export function PhotoUploader({
               )}
             </>
           ) : (
-            <span className="text-amber-400">{sessionPreview.error}</span>
+            <span className="text-neutral-300">{sessionPreview.error}</span>
           )}
         </div>
       </div>
@@ -713,12 +713,12 @@ export function PhotoUploader({
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`flex min-h-[200px] flex-col items-center justify-center rounded-xl border-2 border-dashed transition ${
+          className={`flex min-h-[200px] flex-col items-center justify-center rounded-sm border border-dashed transition ${
             !canStage
-              ? "cursor-not-allowed border-neutral-800 bg-neutral-950/50"
+              ? "cursor-not-allowed border-white/10 bg-white/[0.02]"
               : isDragging
-                ? "cursor-pointer border-white bg-neutral-800"
-                : "cursor-pointer border-neutral-700 hover:border-neutral-500"
+                ? "cursor-pointer border-white bg-white/5"
+                : "cursor-pointer border-white/15 hover:border-white/40"
           }`}
           onClick={() => {
             if (!canStage) return;
@@ -755,8 +755,8 @@ export function PhotoUploader({
         </div>
 
         {!canStage && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl">
-            <span className="rounded-md bg-black/80 px-3 py-1.5 text-xs text-neutral-300">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="rounded-sm bg-black/80 px-3 py-1.5 text-xs text-neutral-300">
               Rellena los metadatos de la sesión
             </span>
           </div>
@@ -777,7 +777,7 @@ export function PhotoUploader({
               type="button"
               disabled={!canSave}
               onClick={saveAll}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+              className={`rounded-sm px-4 py-1.5 text-sm font-medium transition ${
                 canSave
                   ? "bg-white text-black hover:bg-neutral-200 active:scale-[0.98]"
                   : "cursor-not-allowed bg-neutral-800 text-neutral-500"
@@ -822,11 +822,11 @@ function TileView({
 
   const bgClass =
     status === "done"
-      ? "bg-green-900/50"
+      ? "bg-black/60"
       : status === "error" || status === "cancelled"
         ? "bg-red-900/60"
         : status === "duplicate"
-          ? "bg-yellow-900/50"
+          ? "bg-black/70"
           : status === "unsupported"
             ? "bg-neutral-900/80"
             : status === "uploading" || status === "processing"
@@ -844,7 +844,7 @@ function TileView({
 
   return (
     <div
-      className="group relative aspect-square overflow-hidden rounded-lg border border-neutral-800"
+      className="group relative aspect-square overflow-hidden rounded-sm border border-white/10"
       title={error ?? storedFilename ?? file.name}
     >
       {preview ? (
@@ -929,7 +929,7 @@ function TileView({
 // ─── Bits ────────────────────────────────────────────────
 
 const inputClasses =
-  "w-full rounded-md border border-neutral-800 bg-black px-3 py-2 text-sm text-white placeholder-neutral-600 outline-none focus:border-neutral-500 disabled:opacity-50";
+  "w-full rounded-sm border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-white/40 disabled:opacity-50";
 
 function Field({
   label,

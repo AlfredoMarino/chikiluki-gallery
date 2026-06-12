@@ -64,8 +64,8 @@ export function PhotoItem({
   return (
     <div
       ref={containerRef}
-      className={`group relative cursor-pointer overflow-hidden bg-neutral-900 ${
-        rounded ? "rounded-lg" : ""
+      className={`group relative cursor-pointer overflow-hidden bg-neutral-950 ${
+        rounded ? "rounded-sm" : ""
       } ${className}`}
       style={aspectRatio ? { aspectRatio } : undefined}
       onClick={onClick}
